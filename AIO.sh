@@ -2,17 +2,108 @@
 clear
 set +e
 
+# =========================
+# AUTO UPDATE SYSTEM
+# =========================
+
+VERSION="1.0"
+
+REPO_RAW="https://raw.githubusercontent.com/hassangawish/DownGit/master"
+DRIVE_FILE_ID="1AUX2K1xPMq7rgo7iS26_eLHpGv_wHYWw"
+
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+
+check_for_update() {
+
+  echo "🔍 Checking for updates..."
+
+  latest=$(curl -s "$REPO_RAW/version.txt?$(date +%s)")
+
+  if [[ -z "$latest" ]] || [[ "$latest" == *"404"* ]]; then
+    echo "❌ Version check failed: $latest"
+    return
+  fi
+
+  if [[ -f ".local_version" ]]; then
+    current=$(cat .local_version)
+  else
+    current="$VERSION"
+  fi
+
+  echo "📌 Current: $current | Latest: $latest"
+
+  if [[ "$latest" != "$current" ]]; then
+    echo "🚀 New update found ($latest)"
+    update_system "$latest"
+  else
+    echo "✅ Up to date"
+  fi
+}
+
+download_apps() {
+  echo "⬇️ Downloading apps..."
+
+  # ✅ Check gdown installed
+  if ! command -v gdown >/dev/null 2>&1; then
+    echo "❌ gdown not installed. Install it with: pip3 install gdown"
+    return 1
+  fi
+
+  URL="https://drive.google.com/uc?id=${DRIVE_FILE_ID}"
+
+  gdown "$URL" -O apps.zip
+
+  if [[ $? -ne 0 ]]; then
+    echo "❌ gdown failed"
+    return 1
+  fi
+}
+
+update_system() {
+
+  new_version="$1"
+
+  cd "$SCRIPT_DIR" || exit
+
+  echo "⬇️ Updating script..."
+  curl -s "$REPO_RAW/AIO.sh" -o AIO.sh
+  chmod +x AIO.sh
+
+  echo "📦 Updating apps..."
+  rm -rf apk apps.zip
+
+  download_apps
+
+if [[ ! -f apps.zip ]] || [[ $(stat -f%z apps.zip) -lt 1000000 ]]; then
+  echo "❌ Download failed"
+  return 1
+fi
+
+  unzip -o apps.zip > /dev/null
+  rm -rf apps.zip
+
+  # 💥 أهم سطر
+  echo "$new_version" > .local_version
+
+  echo "✅ Update complete"
+  echo "♻️ Restarting..."
+
+  exec "$SCRIPT_DIR/AIO.sh"
+}
+
+# شغّل التحديث أول ما يفتح
+check_for_update
+
+# =========================
+# ORIGINAL SCRIPT (بدون حذف)
+# =========================
+
 cd "$SCRIPT_DIR"
 
 ADB="${ADB:-adb}"
 TARGET_DEVICE=""
 
 export SKIP_JDK_VERSION_CHECK=true
-
-# =========================
-# 🔥 NEW FUNCTIONS (ADDED ONLY)
-# =========================
 
 USE_ALL_USERS=false
 
@@ -21,7 +112,6 @@ get_package_name() {
   aapt dump badging "$apk" 2>/dev/null | grep "package: name=" | awk -F"'" '{print $2}'
 }
 
-# ✅ FIXED
 get_all_users() {
   ADB_CMD shell pm list users | sed -n 's/.*{\([0-9]*\):.*/\1/p'
 }
@@ -38,10 +128,6 @@ install_for_all_users() {
     ADB_CMD install -r -g --user "$user" "$apk" || true
   done
 }
-
-# =========================
-# DEVICE MANAGEMENT
-# =========================
 
 select_device() {
   echo "🔍 Checking devices..."
@@ -63,23 +149,12 @@ select_device() {
   else
     echo "❌ No USB device"
     echo -n "📡 Enter Wireless ADB IP: "
-    read -r ip
+    read ip
 
     $ADB connect "$ip"
     sleep 2
 
-    if [[ "$ip" != *":"* ]]; then
-      TARGET_DEVICE="$ip:5555"
-    else
-      TARGET_DEVICE="$ip"
-    fi
-
-    if $ADB devices | grep -q "$TARGET_DEVICE"; then
-      echo "✅ Connected: $TARGET_DEVICE"
-    else
-      echo "❌ Connection failed"
-      exit 1
-    fi
+    [[ "$ip" != *":"* ]] && TARGET_DEVICE="$ip:5555" || TARGET_DEVICE="$ip"
   fi
 }
 
@@ -88,20 +163,13 @@ ADB_CMD() {
 }
 
 disconnect_if_wireless() {
-  if [[ "$TARGET_DEVICE" == *":"* ]]; then
-    echo "🔌 Disconnecting $TARGET_DEVICE"
-    $ADB disconnect "$TARGET_DEVICE"
-  fi
+  [[ "$TARGET_DEVICE" == *":"* ]] && $ADB disconnect "$TARGET_DEVICE"
 }
 
 wait_for_adb() {
   echo "⏳ Waiting for device..."
   $ADB -s "$TARGET_DEVICE" wait-for-device
 }
-
-# =========================
-# APK SMART INSTALL (UPDATED)
-# =========================
 
 install_apk_safe() {
   local apk="$1"
@@ -111,41 +179,18 @@ install_apk_safe() {
 
   pkg=$(get_package_name "$apk")
 
-  if [[ "$USE_ALL_USERS" == true ]]; then
-    echo "🚀 LYNK Mode → install per user"
+  output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
+  echo "$output"
 
-    for user in $(get_all_users); do
-      echo "👤 User: $user"
-      ADB_CMD install -r -d -g --user "$user" "$apk" || true
-    done
+  if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE"; then
+    echo "💣 Conflict detected..."
 
-  else
-    output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-    echo "$output"
+    if [[ -n "$pkg" ]]; then
+      for user in $(get_all_users); do
+        ADB_CMD shell pm uninstall --user "$user" "$pkg" || true
+      done
 
-    if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE"; then
-      echo "💣 Conflict detected..."
-
-      if [[ -n "$pkg" ]]; then
-        echo "🗑 Removing old version: $pkg"
-
-        for user in $(get_all_users); do
-          ADB_CMD shell pm uninstall --user "$user" "$pkg" || true
-        done
-
-        if [[ "$USE_ALL_USERS" == true ]]; then
-          echo "♻️ Reinstalling for all users..."
-          install_for_all_users "$apk" "$pkg"
-        else
-          ADB_CMD install -r -g "$apk" || true
-        fi
-      else
-        echo "❌ Couldn't detect package"
-      fi
-    else
-      if [[ "$USE_ALL_USERS" == true ]]; then
-        install_for_all_users "$apk" "$pkg"
-      fi
+      ADB_CMD install -r -g "$apk" || true
     fi
   fi
 }
@@ -153,27 +198,14 @@ install_apk_safe() {
 install_apks_in_folder() {
   local folder="$1"
 
-  if [[ ! -d "$folder" ]]; then
-    echo "❌ Folder not found: $folder"
-    return 1
-  fi
-
-  local found=0
+  [[ ! -d "$folder" ]] && echo "❌ Folder not found: $folder" && return
 
   setopt nullglob
-
   for apk in "$folder"/*.apk; do
     [[ -e "$apk" ]] || continue
-    found=1
-    echo "━━━━━━━━━━━━━━━━━━━━━━"
     install_apk_safe "$apk"
   done
-
   unsetopt nullglob
-
-  if [[ $found -eq 0 ]]; then
-    echo "⚠️ No APK files found in: $folder"
-  fi
 }
 
 # =========================
@@ -488,6 +520,10 @@ LYNK() {
   disconnect_if_wireless
 }
 
+# =========================
+# MENU (زي ما هو)
+# =========================
+
 menu() {
   while true; do
     echo ""
@@ -508,9 +544,9 @@ menu() {
     echo "11. Install Apps (G700)"
     echo "12. Install Apps (LYNK&CO)"
     echo "-------------------------------------------------"
-    echo -n "CHOOSE: "
 
-    read -r opt
+    echo -n "CHOOSE: "
+    read opt
 
     case "$opt" in
       1) central ;;
