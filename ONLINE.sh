@@ -197,7 +197,7 @@ central() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "apk"
+  install_apks_in_folder "$DESKTOP_APK/apk"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -331,7 +331,7 @@ ROX() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "Rox"
+  install_apks_in_folder "$DESKTOP_APK/Rox"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -410,7 +410,7 @@ zeekr() {
   ADB_CMD shell su -c "settings put global package_verifier_enable 0" || true
   ADB_CMD shell su -c "settings put global verifier_verify_adb_installs 0" || true
 
-  install_apks_in_folder "Zeekr"
+  install_apks_in_folder "$DESKTOP_APK/Zeekr"
 
   ADB_CMD install -g "zeekr/simplecontrol.apk" || true
 
@@ -466,7 +466,7 @@ dashing() {
 
   echo "🚀 Installing Apps on Dashing"
 
-  install_apks_in_folder "Dashing"
+  install_apks_in_folder "$DESKTOP_APK/Dashing"
 
   ADB_CMD shell am start -n \
     com.appindustry.everywherelauncher/com.michaelflisar.everywherelauncher.ui.activitiesandfragments.MainActivity || true
@@ -540,7 +540,7 @@ lixiang() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "LIAUTO"
+  install_apks_in_folder "$DESKTOP_APK/LIAUTO"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -620,7 +620,7 @@ Haval() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "Haval"
+  install_apks_in_folder "$DESKTOP_APK/Haval"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -774,7 +774,7 @@ G700() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "G700"
+  install_apks_in_folder "$DESKTOP_APK/G700"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -854,7 +854,7 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "LYNK"
+  install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -929,7 +929,7 @@ Zeekr9x() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "9X"
+  install_apks_in_folder "$DESKTOP_APK/9X"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
@@ -1149,7 +1149,7 @@ BYD_OLD() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "BYD_Old"
+  install_apks_in_folder "$DESKTOP_APK/BYD_Old"
   USE_ALL_USERS=false
 
   for user in "${USERS[@]}"; do
