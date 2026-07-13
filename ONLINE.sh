@@ -1352,7 +1352,7 @@ menu() {
     echo -n "CHOOSE: "
 
     read -r opt
-    echo ""  # سطر جديد عشان الـ pipe
+    echo ""   # مهم جداً للـ pipe
 
     case "$opt" in
       1) central ;;
@@ -1373,8 +1373,8 @@ menu() {
       16) BYD_OLD ;;
       17) AVATR ;;
       18) AIOPPREMISSION ;;
-      0|q|Q) echo "👋 Exiting..."; exit 0 ;;
-      *) echo "❌ Invalid option! Please enter a number." ;;
+      0|q|Q|exit) echo "👋 Exiting..."; exit 0 ;;
+      *) echo "❌ Invalid option! Please enter a number from 0-18." ;;
     esac
   done
 }
