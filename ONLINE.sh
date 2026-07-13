@@ -1346,7 +1346,6 @@ menu() {
     echo "16. Install Apps (BYD_OLD)"
     echo "17. Install Apps (AVATR)"
     echo "18. AIO Premission (AIO)"
-    echo "0.  Exit"
     echo "-------------------------------------------------"
     echo -n "CHOOSE: "
 
@@ -1371,8 +1370,9 @@ menu() {
       16) BYD_OLD ;;
       17) AVATR ;;
       18) AIOPPREMISSION ;;
-      0) echo "👋 Exiting..."; exit 0 ;;
-      *) echo "❌ ERROR! Invalid option, please try again." ;;
+      *) echo "❌ ERROR!" ;;
     esac
   done
 }
+
+menu
