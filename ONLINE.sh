@@ -1323,6 +1323,7 @@ AIOPPREMISSION() {
 
 menu() {
   while true; do
+    clear
     echo ""
     echo "=============================="
     echo "   BEST STORE PRO MAX 💀"
@@ -1346,10 +1347,12 @@ menu() {
     echo "16. Install Apps (BYD_OLD)"
     echo "17. Install Apps (AVATR)"
     echo "18. AIO Premission (AIO)"
+    echo "0.  Exit"
     echo "-------------------------------------------------"
     echo -n "CHOOSE: "
 
     read -r opt
+    echo ""  # سطر جديد عشان الـ pipe
 
     case "$opt" in
       1) central ;;
@@ -1370,9 +1373,8 @@ menu() {
       16) BYD_OLD ;;
       17) AVATR ;;
       18) AIOPPREMISSION ;;
-      *) echo "❌ ERROR!" ;;
+      0|q|Q) echo "👋 Exiting..."; exit 0 ;;
+      *) echo "❌ Invalid option! Please enter a number." ;;
     esac
   done
 }
-
-menu
