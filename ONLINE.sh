@@ -155,16 +155,12 @@ install_apks_in_folder() {
 
   local found=0
 
-  setopt nullglob
-
   for apk in "$folder"/*.apk; do
-    [[ -e "$apk" ]] || continue
+    [[ -f "$apk" ]] || continue
     found=1
     echo "━━━━━━━━━━━━━━━━━━━━━━"
     install_apk_safe "$apk"
   done
-
-  unsetopt nullglob
 
   if [[ $found -eq 0 ]]; then
     echo "⚠️ No APK files found in: $folder"
