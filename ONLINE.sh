@@ -980,16 +980,10 @@ menu() {
       17) AVATR ;;
       18) AIOPPREMISSION ;;
       0)
-        echo "👋 Closing Terminal..."
-        sleep 0.4
-        # إغلاق نظيف بدون أي رسائل
-        osascript -e '
-          tell application "Terminal"
-            close (every window whose name contains "zsh" or name contains "bash")
-          end tell
-        ' 2>/dev/null || true
-        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null
-        exit 0
+        echo -n "👋 "
+        sleep 0.3
+        osascript -e 'tell application "Terminal" to close front window' 2>/dev/null || true
+        kill -9 $$ 2>/dev/null
         ;;
     esac
 
