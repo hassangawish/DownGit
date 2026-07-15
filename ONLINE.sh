@@ -981,12 +981,12 @@ menu() {
       18) AIOPPREMISSION ;;
       0)
         echo "👋 Closing Terminal..."
-        sleep 0.3
-        osascript -e '
-          tell application "System Events" to keystroke "w" using command down
-        ' 2>/dev/null || true
-        kill -9 $$ 2>/dev/null || exit 0
+        sleep 0.6
+        # طريقة قوية جداً لإغلاق الترمنل
+        osascript -e 'tell application "Terminal" to close (front window)' 2>/dev/null || true
+        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
         ;;
+      *) echo "❌ Invalid option! Returning to menu..." ;;
     esac
 
     echo -e "\nPress Enter to return to main menu..."
