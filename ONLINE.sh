@@ -981,12 +981,16 @@ menu() {
       18) AIOPPREMISSION ;;
       0)
         echo "👋 Closing Terminal..."
-        sleep 0.6
-        # طريقة قوية جداً لإغلاق الترمنل
-        osascript -e 'tell application "Terminal" to close (front window)' 2>/dev/null || true
-        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
+        sleep 0.4
+        # إغلاق نظيف بدون أي رسائل
+        osascript -e '
+          tell application "Terminal"
+            close (every window whose name contains "zsh" or name contains "bash")
+          end tell
+        ' 2>/dev/null || true
+        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null
+        exit 0
         ;;
-      *) echo "❌ Invalid option! Returning to menu..." ;;
     esac
 
     echo -e "\nPress Enter to return to main menu..."
