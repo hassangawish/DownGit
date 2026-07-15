@@ -982,19 +982,10 @@ menu() {
       0)
         echo "👋 Closing Terminal..."
         sleep 0.3
-        
-        # حل قوي جداً بدون تأكيد
         osascript -e '
-          tell application "Terminal"
-            activate
-            tell front window
-              close
-            end tell
-          end tell
-        ' >/dev/null 2>&1 || true
-        
-        # إضافي للإغلاق القسري
-        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
+          tell application "System Events" to keystroke "w" using command down
+        ' 2>/dev/null || true
+        kill -9 $$ 2>/dev/null || exit 0
         ;;
     esac
 
