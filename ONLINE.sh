@@ -933,7 +933,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "   BEST STORE PRO MAX 💀"
+    echo "   BEST STORE PRO MAX"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
@@ -980,11 +980,13 @@ menu() {
       17) AVATR ;;
       18) AIOPPREMISSION ;;
       0)
-        echo -n "👋 "
-        sleep 0.3
-        osascript -e 'tell application "Terminal" to close front window' 2>/dev/null || true
-        kill -9 $$ 2>/dev/null
+        echo "👋 Closing Terminal..."
+        sleep 0.6
+        # طريقة قوية جداً لإغلاق الترمنل
+        osascript -e 'tell application "Terminal" to close (front window)' 2>/dev/null || true
+        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
         ;;
+      *) echo "❌ Invalid option! Returning to menu..." ;;
     esac
 
     echo -e "\nPress Enter to return to main menu..."
