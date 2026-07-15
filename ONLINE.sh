@@ -981,15 +981,15 @@ menu() {
       18) AIOPPREMISSION ;;
       0)
         echo "👋 Closing Terminal..."
-        sleep 0.5
-        # إغلاق قسري بدون تأكيد
+        sleep 0.4
         osascript -e '
-          tell application "Terminal"
-            set targetWindow to front window
-            tell targetWindow to close
+          tell application "System Events"
+            tell process "Terminal"
+              click menu item "Close Window" of menu 1 of menu bar item "File" of menu bar 1
+            end tell
           end tell
         ' 2>/dev/null || true
-        kill -9 $$ 2>/dev/null || exit 0
+        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
         ;;
     esac
 
