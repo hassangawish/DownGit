@@ -993,7 +993,7 @@ menu() {
         ;;
     esac
 
-    echo -e "\nClick Terminate To Close menu..."
+    echo -e "\nPress Enter to return to main menu..."
     read -r
   done
 }
