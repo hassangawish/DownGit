@@ -981,9 +981,10 @@ menu() {
       18) AIOPPREMISSION ;;
       0)
         echo "👋 Closing Terminal..."
-        sleep 0.5
-        osascript -e 'tell application "Terminal" to close (every window whose name contains "zsh" or name contains "bash")' 2>/dev/null || exit 0
-        exit 0
+        sleep 0.8
+        # طريقة قوية لإغلاق الترمنل على macOS
+        osascript -e 'tell application "Terminal" to close front window' 2>/dev/null || true
+        kill -9 $$ 2>/dev/null || exit 0
         ;;
       *) echo "❌ Invalid option! Returning to menu..." ;;
     esac
