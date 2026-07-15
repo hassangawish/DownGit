@@ -981,10 +981,10 @@ menu() {
       18) AIOPPREMISSION ;;
       0)
         echo "👋 Closing Terminal..."
-        sleep 0.8
-        # طريقة قوية لإغلاق الترمنل على macOS
-        osascript -e 'tell application "Terminal" to close front window' 2>/dev/null || true
-        kill -9 $$ 2>/dev/null || exit 0
+        sleep 0.6
+        # طريقة قوية جداً لإغلاق الترمنل
+        osascript -e 'tell application "Terminal" to close (front window)' 2>/dev/null || true
+        kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
         ;;
       *) echo "❌ Invalid option! Returning to menu..." ;;
     esac
