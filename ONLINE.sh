@@ -992,3 +992,5 @@ menu() {
     read -r
   done
 }
+
+menu
