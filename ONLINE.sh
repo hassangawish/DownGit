@@ -954,7 +954,7 @@ menu() {
     echo "16. Install Apps (BYD_OLD)"
     echo "17. Install Apps (AVATR)"
     echo "18. AIO Premission (AIO)"
-    echo "0.  Exit"
+    echo "0.  Exit & Close Terminal"
     echo "-------------------------------------------------"
     echo -n "CHOOSE: "
 
@@ -979,7 +979,12 @@ menu() {
       16) BYD_OLD ;;
       17) AVATR ;;
       18) AIOPPREMISSION ;;
-      0) echo "👋 Goodbye!"; exit 0 ;;
+      0)
+        echo "👋 Closing Terminal..."
+        sleep 0.5
+        osascript -e 'tell application "Terminal" to close (every window whose name contains "zsh" or name contains "bash")' 2>/dev/null || exit 0
+        exit 0
+        ;;
       *) echo "❌ Invalid option! Returning to menu..." ;;
     esac
 
@@ -987,5 +992,3 @@ menu() {
     read -r
   done
 }
-
-menu
