@@ -1,21 +1,32 @@
 #!/bin/bash
-# Bash compatible version for online & local use
+# ============================================================
+# BEST STORE PRO MAX - Full Fixed Version (Bash Compatible)
+# Works both locally and when run from online/temp files
+# ============================================================
 
-# Emulate some Zsh behavior if running under Zsh
+# Emulate Zsh behavior if running under Zsh
 if [ -n "$ZSH_VERSION" ]; then
   emulate -L zsh 2>/dev/null || true
+fi
+
+# Enable nullglob for Bash (prevents skipping empty folders)
+if [ -n "$BASH_VERSION" ]; then
+  shopt -s nullglob
 fi
 
 clear
 set +e
 
-# Force correct directory
+# ========== PATH SETUP ==========
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
 cd "$SCRIPT_DIR" 2>/dev/null || true
-echo "📍 Working directory: $(pwd)"
 
 USER_HOME="$HOME"
 DESKTOP_APK="$USER_HOME/Desktop/apk"
+
+echo "📍 Working directory: $(pwd)"
 echo "📁 Using Desktop path: $DESKTOP_APK"
+echo ""
 
 ADB="${ADB:-adb}"
 TARGET_DEVICE=""
@@ -34,18 +45,7 @@ get_package_name() {
 }
 
 get_all_users() {
-  ADB_CMD shell pm list users | sed -n 's/.*{\([0-9]*\):.*/\1/p'
-}
-
-install_for_all_users() {
-  local apk="$1"
-  local pkg="$2"
-  local users
-  users=$(get_all_users)
-  for user in $users; do
-    echo "👤 Installing for user: $user"
-    ADB_CMD install -r -g --user "$user" "$apk" || true
-  done
+  ADB_CMD shell pm list users 2>/dev/null | sed -n 's/.*{\([0-9]*\):.*/\1/p'
 }
 
 select_device() {
@@ -154,8 +154,9 @@ install_apks_in_folder() {
   fi
 
   local found=0
+  local apks=("$folder"/*.apk)
 
-  for apk in "$folder"/*.apk; do
+  for apk in "${apks[@]}"; do
     [[ -f "$apk" ]] || continue
     found=1
     echo "━━━━━━━━━━━━━━━━━━━━━━"
@@ -168,7 +169,7 @@ install_apks_in_folder() {
 }
 
 # =========================
-# MAIN FUNCTIONS (مع حماية من الكراش)
+# MAIN FUNCTIONS
 # =========================
 
 central() {
@@ -274,17 +275,21 @@ ROX() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/Rox"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD install -t -g --user "$user" "$DESKTOP_APK/rox/Launcher"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Downloader"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell am start --user "$user" -n com.roxmotor.nonpreinstallapp/com.roxmotor.nonpreinstallapp.MainActivity2 || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
@@ -296,16 +301,19 @@ ROX() {
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   ADB_CMD shell wm density 160 || true
   echo "✅ Installed Successfully"
   disconnect_if_wireless
@@ -334,31 +342,39 @@ zeekr() {
   ADB_CMD shell su -c "pm disable com.ecarx.xsfinstallverifier" || true
   ADB_CMD shell su -c "settings put global package_verifier_enable 0" || true
   ADB_CMD shell su -c "settings put global verifier_verify_adb_installs 0" || true
+
   install_apks_in_folder "$DESKTOP_APK/Zeekr"
-  ADB_CMD install -g "zeekr/simplecontrol.apk" || true
+  ADB_CMD install -g "$DESKTOP_APK/Zeekr/simplecontrol.apk" || true
+
   ADB_CMD shell settings put global auto_time 1 || true
   ADB_CMD shell settings put global auto_time_zone 1 || true
   ADB_CMD shell settings put global time_zone Asia/Karachi || true
   ADB_CMD shell service call alarm 3 s16 "Asia/Karachi" || true
+
   ADB_CMD shell ime enable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell pm grant jp.co.c_lis.ccl.morelocale android.permission.CHANGE_CONFIGURATION || true
+
   ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
   ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
   ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
   ADB_CMD shell appops set --user 0 ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
   ADB_CMD shell settings put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   ADB_CMD shell cmd appops set app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
   ADB_CMD shell cmd appops set app.revanced.android.gms WAKE_LOCK allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps WAKE_LOCK allow || true
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -368,32 +384,40 @@ dashing() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Dashing"
+
   install_apks_in_folder "$DESKTOP_APK/Dashing"
   ADB_CMD shell am start -n com.appindustry.everywherelauncher/com.michaelflisar.everywherelauncher.ui.activitiesandfragments.MainActivity || true
-  ADB_CMD install -g "dashing/simplecontrol.apk" || true
+  ADB_CMD install -g "$DESKTOP_APK/Dashing/simplecontrol.apk" || true
+
   ADB_CMD shell settings put global auto_time 1 || true
   ADB_CMD shell settings put global auto_time_zone 1 || true
   ADB_CMD shell settings put global time_zone Asia/Karachi || true
   ADB_CMD shell service call alarm 3 s16 "Asia/Karachi" || true
+
   ADB_CMD shell ime enable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell pm grant jp.co.c_lis.ccl.morelocale android.permission.CHANGE_CONFIGURATION || true
+
   ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
   ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
   ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
   ADB_CMD shell appops set --user 0 ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
   ADB_CMD shell settings put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   ADB_CMD shell cmd appops set app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
   ADB_CMD shell cmd appops set app.revanced.android.gms WAKE_LOCK allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
   ADB_CMD shell cmd appops set app.revanced.android.apps.maps WAKE_LOCK allow || true
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -403,6 +427,7 @@ lixiang() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Li Auto"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -412,41 +437,49 @@ lixiang() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/LIAUTO"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Downloader"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/video"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.t4w.ostora516 REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -456,6 +489,7 @@ Haval() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Haval"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -465,38 +499,46 @@ Haval() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/Haval"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Downloader"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Yandex"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -506,6 +548,7 @@ Jetout() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Jetour"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -515,7 +558,9 @@ Jetout() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
-  ADB_CMD push Jetout /data/local/tmp/ >/dev/null || true
+
+  ADB_CMD push "$DESKTOP_APK/Jetout" /data/local/tmp/ >/dev/null || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell "
       cd /data/local/tmp/Jetout
@@ -524,30 +569,36 @@ Jetout() {
       done
     " || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -557,6 +608,7 @@ G700() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on G700"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -566,40 +618,48 @@ G700() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/G700"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Downloader"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Yandex"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell appops set --user "$user" ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -609,6 +669,7 @@ LYNK() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on LYNK&CO"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -618,38 +679,46 @@ LYNK() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Downloader"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Haval/Yandex"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -659,6 +728,7 @@ Zeekr9x() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Zeekr 9X"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -668,13 +738,16 @@ Zeekr9x() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/9X"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/9X/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/9X/Downloader"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
@@ -682,34 +755,42 @@ Zeekr9x() {
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.uptodown REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.aurora.store REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
   done
+
   ADB_CMD shell ime enable --user 0 com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell ime set --user 0 com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell ime enable --user 10 com.touchtype.swiftkez/com.touchtype.KeyboardService >/dev/null 2>&1 || true
   ADB_CMD shell ime set --user 10 com.touchtype.swiftkez/com.touchtype.KeyboardService >/dev/null 2>&1 || true
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   ADB_CMD -d shell pm clear --user 0 com.zeekr.housekeeper || true
   ADB_CMD -d shell pm disable-user --user 0 com.zeekr.housekeeper || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   ADB_CMD shell settings put global auto_time 1 || true
   ADB_CMD shell settings put global auto_time_zone 1 || true
   ADB_CMD shell settings put global time_zone Asia/Dubai || true
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -745,6 +826,7 @@ Leapmotor() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Leapmotor"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -754,45 +836,52 @@ Leapmotor() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
-  setopt nullglob
-  for apk in Leep/*.apk; do
-    [[ -e "$apk" ]] || continue
+
+  # Safe loop (no setopt)
+  for apk in "$DESKTOP_APK/Leep"/*.apk; do
+    [[ -f "$apk" ]] || continue
     echo "📦 Installing: $(basename "$apk")"
     for user in "${USERS[@]}"; do
       ADB_CMD install -g -r -t -d --install-reason 64 --user "$user" "$apk" || true
     done
   done
-  unsetopt nullglob
+
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Leep/Ayah"/*.apk || true
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/Leep/Downloader"/*.apk || true
   done
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -802,6 +891,7 @@ BYD_OLD() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on BYD OLD"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -811,13 +901,16 @@ BYD_OLD() {
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
   echo "👥 Users: ${USERS[*]}"
+
   USE_ALL_USERS=true
   install_apks_in_folder "$DESKTOP_APK/BYD_Old"
   USE_ALL_USERS=false
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.t4w.ostora516 REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
@@ -825,17 +918,21 @@ BYD_OLD() {
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
   done
+
   ADB_CMD push "$DESKTOP_APK/apk/VIP.conf" /sdcard || true
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps || true
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow || true
   done
+
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -871,13 +968,15 @@ AVATR() {
 
   echo "📦 Installing AVATR APKs..."
 
-  # Main APKs - Fixed path
+  # Main APKs - Absolute path + safe
   APK_DIR="$DESKTOP_APK/AVATR"
   echo "Searching in: $APK_DIR"
 
   if [[ -d "$APK_DIR" ]]; then
+    local found=0
     for apk in "$APK_DIR"/*.apk; do
       [[ -f "$apk" ]] || continue
+      found=1
       echo "   → $(basename "$apk")"
       
       for user in "${USERS[@]}"; do
@@ -886,6 +985,9 @@ AVATR() {
           ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
       done
     done
+    if [[ $found -eq 0 ]]; then
+      echo "⚠️ No APK files found in $APK_DIR"
+    fi
   else
     echo "❌ Folder not found: $APK_DIR"
     echo "Current dir: $(pwd)"
@@ -935,28 +1037,37 @@ AIOPPREMISSION() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Apps Premissions on AVATR (ALL)"
+
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
     ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
+
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
+
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
+
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
   done
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
+
   echo "🚀 Apps Premissions on AVATR (DONE)"
   disconnect_if_wireless
 }
@@ -969,7 +1080,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "  BEST STORE PRO MAX 💀💀"
+    echo "  💀 BEST STORE PRO MAX 💀"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
@@ -1018,7 +1129,6 @@ menu() {
       0)
         echo "👋 Closing Terminal..."
         sleep 0.6
-        # طريقة قوية جداً لإغلاق الترمنل
         osascript -e 'tell application "Terminal" to close (front window)' 2>/dev/null || true
         kill -9 $PPID 2>/dev/null || kill -9 $$ 2>/dev/null || exit 0
         ;;
