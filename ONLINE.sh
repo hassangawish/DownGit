@@ -870,21 +870,30 @@ AVATR() {
 
   echo "📦 Installing AVATR APKs..."
 
-  # Main APKs
-  for apk in AVATR/*.apk; do
-    [[ -f "$apk" ]] || continue
-    echo "   → $(basename "$apk")"
-    
-    for user in "${USERS[@]}"; do
-        echo "   👤 User $user"
-        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || \
-        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
+  # Main APKs - Fixed path
+  APK_DIR="$DESKTOP_APK/AVATR"
+  echo "Searching in: $APK_DIR"
+
+  if [[ -d "$APK_DIR" ]]; then
+    for apk in "$APK_DIR"/*.apk; do
+      [[ -f "$apk" ]] || continue
+      echo "   → $(basename "$apk")"
+      
+      for user in "${USERS[@]}"; do
+          echo "   👤 User $user"
+          ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || \
+          ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
+      done
     done
-  done
+  else
+    echo "❌ Folder not found: $APK_DIR"
+    echo "Current dir: $(pwd)"
+  fi
 
   # Ayah & Downloader
+  echo "📦 Installing Ayah & Downloader..."
   for user in "${USERS[@]}"; do
-    echo "   Installing Ayah & Downloader for user $user"
+    echo "   👤 User $user"
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
@@ -959,7 +968,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "  💀 BEST STORE PRO MAX 💀"
+    echo "  BEST STORE PRO MAX 💀"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
