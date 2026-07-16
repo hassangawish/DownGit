@@ -1,8 +1,11 @@
-#!/usr/bin/env zsh
-#!/bin/zsh
-# أو
-#!/usr/bin/env zsh
-emulate -L zsh   # أضف هذا السطر بعد الـ shebang مباشرة
+#!/bin/bash
+# Bash compatible version for online & local use
+
+# Emulate some Zsh behavior if running under Zsh
+if [ -n "$ZSH_VERSION" ]; then
+  emulate -L zsh 2>/dev/null || true
+fi
+
 clear
 set +e
 
@@ -854,20 +857,20 @@ AVATR() {
 
   echo "👥 Found Users: ${USERS[*]}"
 
-  # إعدادات مهمة قبل التثبيت
+  # Prepare device
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
-  ADB_CMD shell settings put global package_verifier_enable 0
-  ADB_CMD shell settings put global verifier_verify_adb_installs 0
+  ADB_CMD shell settings put global package_verifier_enable 0 2>/dev/null || true
+  ADB_CMD shell settings put global verifier_verify_adb_installs 0 2>/dev/null || true
   ADB_CMD shell pm disable-user --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
 
   sleep 3
 
   echo "📦 Installing AVATR APKs..."
 
-  # تثبيت الملفات الرئيسية
+  # Main APKs
   for apk in AVATR/*.apk; do
     [[ -f "$apk" ]] || continue
     echo "   → $(basename "$apk")"
@@ -879,14 +882,14 @@ AVATR() {
     done
   done
 
-  # Ayah + Downloader
+  # Ayah & Downloader
   for user in "${USERS[@]}"; do
     echo "   Installing Ayah & Downloader for user $user"
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
 
-  # Permissions & Settings
+  # Permissions
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
@@ -908,7 +911,7 @@ AVATR() {
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
 
-  # إعادة تفعيل
+  # Re-enable
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
