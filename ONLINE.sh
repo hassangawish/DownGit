@@ -963,7 +963,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "  💀 BEST STORE PRO MAX 💀"
+    echo "  BEST STORE PRO MAX 💀"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
