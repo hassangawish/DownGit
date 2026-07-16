@@ -878,8 +878,8 @@ AVATR() {
   unsetopt nullglob
 
   for user in "${USERS[@]}"; do
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle /Users/hassan/Desktop/apk/AVATR/Ayah/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car /Users/hassan/Desktop/apk/AVATR/Downloader/*.apk || true
+    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
+    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
 
   for user in "${USERS[@]}"; do
