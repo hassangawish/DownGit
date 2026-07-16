@@ -838,12 +838,11 @@ BYD_OLD() {
 
 AVATR() {
   clear
-  select_device
+  select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
 
   echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
 
-  # Detect users
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -855,20 +854,20 @@ AVATR() {
 
   echo "👥 Found Users: ${USERS[*]}"
 
-  # Disable verifier & package installer temporarily
+  # إعدادات مهمة قبل التثبيت
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
-  ADB_CMD shell settings put global package_verifier_enable 0 2>/dev/null || true
-  ADB_CMD shell settings put global verifier_verify_adb_installs 0 2>/dev/null || true
+  ADB_CMD shell settings put global package_verifier_enable 0
+  ADB_CMD shell settings put global verifier_verify_adb_installs 0
   ADB_CMD shell pm disable-user --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
 
-  sleep 2
+  sleep 3
 
   echo "📦 Installing AVATR APKs..."
 
-  # Main APKs
+  # تثبيت الملفات الرئيسية
   for apk in AVATR/*.apk; do
     [[ -f "$apk" ]] || continue
     echo "   → $(basename "$apk")"
@@ -880,13 +879,14 @@ AVATR() {
     done
   done
 
-  # Ayah & Downloader
+  # Ayah + Downloader
   for user in "${USERS[@]}"; do
+    echo "   Installing Ayah & Downloader for user $user"
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
 
-  # Permissions
+  # Permissions & Settings
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
@@ -903,19 +903,12 @@ AVATR() {
 
     ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
     ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-
-    ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
-      nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
-    ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
-
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
   done
 
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
 
-  # Re-enable package installer
+  # إعادة تفعيل
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
@@ -963,7 +956,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "  BEST STORE PRO MAX 💀"
+    echo "  💀 BEST STORE PRO MAX 💀"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
