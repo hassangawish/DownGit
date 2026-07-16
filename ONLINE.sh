@@ -966,42 +966,61 @@ AVATR() {
 
   sleep 3
 
-  echo "📦 Installing AVATR APKs..."
-
-  # Main APKs - Absolute path + safe
+  echo "📦 Installing Main AVATR APKs..."
   APK_DIR="$DESKTOP_APK/AVATR"
-  echo "Searching in: $APK_DIR"
-
   if [[ -d "$APK_DIR" ]]; then
     local found=0
     for apk in "$APK_DIR"/*.apk; do
       [[ -f "$apk" ]] || continue
       found=1
       echo "   → $(basename "$apk")"
-      
       for user in "${USERS[@]}"; do
-          echo "   👤 User $user"
-          ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || \
-          ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
+        echo "   👤 User $user"
+        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || \
+        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
       done
     done
-    if [[ $found -eq 0 ]]; then
-      echo "⚠️ No APK files found in $APK_DIR"
-    fi
+    [[ $found -eq 0 ]] && echo "⚠️ No main APK files found in $APK_DIR"
   else
-    echo "❌ Folder not found: $APK_DIR"
-    echo "Current dir: $(pwd)"
+    echo "❌ Main folder not found: $APK_DIR"
   fi
 
-  # Ayah & Downloader
-  echo "📦 Installing Ayah & Downloader..."
-  for user in "${USERS[@]}"; do
-    echo "   👤 User $user"
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
-  done
+  # === Dynamic Subfolders ===
+  echo ""
+  echo "📂 Enter subfolders to install from (e.g: Ayah Downloader Soundcloud Video)"
+  echo "   Or press Enter to install from all subfolders that contain .apk"
+  read -r subfolders
+
+  if [[ -z "$subfolders" ]]; then
+    echo "🔄 Installing from ALL subfolders..."
+    for sub in "$APK_DIR"/*/; do
+      [[ -d "$sub" ]] || continue
+      subname=$(basename "$sub")
+      echo "📦 Installing from subfolder: $subname"
+      for user in "${USERS[@]}"; do
+        echo "   👤 User $user"
+        ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$sub"*.apk || true
+        ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$sub"*.apk || true
+      done
+    done
+  else
+    for sub in $subfolders; do
+      subdir="$APK_DIR/$sub"
+      if [[ -d "$subdir" ]]; then
+        echo "📦 Installing from subfolder: $sub"
+        for user in "${USERS[@]}"; do
+          echo "   👤 User $user"
+          ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$subdir"/*.apk || true
+          ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$subdir"/*.apk || true
+        done
+      else
+        echo "⚠️ Subfolder not found: $sub"
+      fi
+    done
+  fi
 
   # Permissions
+  echo "🔧 Setting Permissions..."
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
@@ -1023,7 +1042,6 @@ AVATR() {
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
 
-  # Re-enable
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
@@ -1080,7 +1098,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "  💀 BEST STORE PRO MAX 💀"
+    echo "  💀💀 BEST STORE PRO MAX 💀💀"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
