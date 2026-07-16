@@ -843,49 +843,50 @@ AVATR() {
 
   echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
 
+  # Detect users
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
-
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
-
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
-
-  if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=(0)
-    echo "⚠️ Could not detect users, using User 0."
-  fi
+  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
 
   echo "👥 Found Users: ${USERS[*]}"
 
+  # Disable verifier & package installer temporarily
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
+  ADB_CMD shell settings put global package_verifier_enable 0 2>/dev/null || true
+  ADB_CMD shell settings put global verifier_verify_adb_installs 0 2>/dev/null || true
+  ADB_CMD shell pm disable-user --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
+
   sleep 2
 
-setopt nullglob
-echo "📦 Installing AVATR APKs..."
+  echo "📦 Installing AVATR APKs..."
 
-for apk in AVATR/*.apk; do
+  # Main APKs
+  for apk in AVATR/*.apk; do
     [[ -f "$apk" ]] || continue
     echo "   → $(basename "$apk")"
     
     for user in "${USERS[@]}"; do
         echo "   👤 User $user"
-        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car"$apk" || \
+        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || \
         ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
     done
-done
-unsetopt nullglob
+  done
 
+  # Ayah & Downloader
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
 
+  # Permissions
   for user in "${USERS[@]}"; do
     ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
     ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
@@ -914,12 +915,12 @@ unsetopt nullglob
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
 
+  # Re-enable package installer
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
   echo "🎉 AVATR Installation Completed!"
-
   disconnect_if_wireless
 }
 
