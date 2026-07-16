@@ -875,7 +875,7 @@ for apk in AVATR/*.apk; do
     
     for user in "${USERS[@]}"; do
         echo "   👤 User $user"
-        ADB_CMD install -r -d -g --user "$user" "$apk" || \
+        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car"$apk" || \
         ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
     done
 done
