@@ -9,8 +9,9 @@ fi
 clear
 set +e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-cd "$SCRIPT_DIR"
+# Force correct directory
+cd "$SCRIPT_DIR" 2>/dev/null || true
+echo "📍 Working directory: $(pwd)"
 
 USER_HOME="$HOME"
 DESKTOP_APK="$USER_HOME/Desktop/apk"
@@ -968,7 +969,7 @@ menu() {
   while true; do
     clear
     echo "=============================="
-    echo "  BEST STORE PRO MAX 💀"
+    echo "  BEST STORE PRO MAX 💀💀"
     echo "=============================="
     echo ""
     echo "1.  Install Apps (BYD)"
