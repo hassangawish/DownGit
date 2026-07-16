@@ -1,4 +1,8 @@
 #!/usr/bin/env zsh
+#!/bin/zsh
+# أو
+#!/usr/bin/env zsh
+emulate -L zsh   # أضف هذا السطر بعد الـ shebang مباشرة
 clear
 set +e
 
@@ -862,20 +866,20 @@ AVATR() {
 
   sleep 2
 
-  setopt nullglob
+setopt nullglob
+echo "📦 Installing AVATR APKs..."
 
-  for apk in AVATR/*.apk; do
-    [[ -e "$apk" ]] || continue
-
+for apk in AVATR/*.apk; do
+    [[ -f "$apk" ]] || continue
     echo "   → $(basename "$apk")"
-
+    
     for user in "${USERS[@]}"; do
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || \
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || true
+        echo "   👤 User $user"
+        ADB_CMD install -r -d -g --user "$user" "$apk" || \
+        ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
     done
-  done
-
-  unsetopt nullglob
+done
+unsetopt nullglob
 
   for user in "${USERS[@]}"; do
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
