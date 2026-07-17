@@ -852,63 +852,88 @@ BYD_OLD() {
 
 AVATR() {
   clear
-  select_device || { echo "Returning to main menu..."; return; }
+  select_device
   wait_for_adb
+
   echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
 
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
+
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
-  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=(0)
+    echo "⚠️ Could not detect users, using User 0."
+  fi
+
   echo "👥 Found Users: ${USERS[*]}"
 
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
-  ADB_CMD shell settings put global package_verifier_enable 0 2>/dev/null || true
-  ADB_CMD shell settings put global verifier_verify_adb_installs 0 2>/dev/null || true
-  ADB_CMD shell pm disable-user --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
+  sleep 2
 
-  sleep 3
+  setopt nullglob
 
-  echo "📦 Installing Main AVATR APKs..."
-  APK_DIR="$DESKTOP_APK/AVATR"
-  for apk in "$APK_DIR"/*.apk; do
-    [[ -f "$apk" ]] || continue
+  for apk in AVATR/*.apk; do
+    [[ -e "$apk" ]] || continue
+
     echo "   → $(basename "$apk")"
+
     for user in "${USERS[@]}"; do
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || \
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || true
+      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || \
+      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || true
     done
   done
 
-  install_from_subfolders "$APK_DIR" "AVATR"
-
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
+  unsetopt nullglob
 
   for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
+    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle /Users/hassangawish/Desktop/apk/AVATR/Ayah/*.apk || true
+    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car /Users/hassangawish/Desktop/apk/AVATR/Downloader/*.apk || true
   done
+
+  for user in "${USERS[@]}"; do
+    ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
+    ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
+    ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
+    ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
+    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
+    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
+    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
+
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
+    ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
+    ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
+
+    ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
+      nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
+    ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
+
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
+  done
+
+  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
+  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
 
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
-  set_permissions
-
   echo "🎉 AVATR Installation Completed!"
+
   disconnect_if_wireless
 }
 
