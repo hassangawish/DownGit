@@ -719,7 +719,7 @@ Zeekr9x() {
   disconnect_if_wireless
 }
 
-AIOPPREMISSION() {
+Premissions() {
   clear
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
@@ -1183,8 +1183,7 @@ menu() {
     echo "║ 15. 📱 Install Apps (Leepmotor)                              ║"
     echo "║ 16. 📱 Install Apps (BYD_OLD)                                ║"
     echo "║ 17. 📱 Install Apps (AVATR)                                  ║"
-    echo "║ 18. ⚙️  AIO Permission (AIO)                                  ║"
-    echo "║ 19. 📱 Install Apps (VOYAH)                                  ║"
+    echo "║ 18. 📱 Install Apps (VOYAH)                                  ║"
     echo "║ 99. 📦 Dump All Apps (Latest)                                ║"
     echo "║  0. 🚪 Exit & Close Terminal                                 ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
@@ -1209,8 +1208,7 @@ menu() {
       15) Leapmotor ;;
       16) BYD_OLD ;;
       17) AVATR ;;
-      18) AIOPPREMISSION ;;
-      19) VOYAH ;;
+      18) VOYAH ;;
       99) Dump_Apps ;;
       0)
         echo "👋 Closing Terminal..."
