@@ -909,8 +909,21 @@ for split_dir in "$AVATR_DIR"/*/; do
 
   split_name=$(basename "$split_dir")
 
-  split_apks=("$split_dir"/*.apk)
-  [[ -f "${split_apks[0]}" ]] || continue
+  split_apks=()
+
+  for apk in "$split_dir"/*.apk; do
+    [[ -f "$apk" ]] || continue
+
+    file=$(basename "$apk")
+
+    case "$file" in
+      base.apk|split_*.apk|config.*.apk)
+        split_apks+=("$apk")
+        ;;
+    esac
+  done
+
+  [[ ${#split_apks[@]} -eq 0 ]] && continue
 
   echo "   📂 $split_name"
 
