@@ -886,34 +886,68 @@ AVATR() {
     return
   fi
 
-  # echo ""
-  # echo "📦 Installing Main APKs..."
-
-  # for apk in "$AVATR_DIR"/*.apk; do
-  #   [[ -f "$apk" ]] || continue
-
-  #   echo "   → $(basename "$apk")"
-
-  #   for user in "${USERS[@]}"; do
-  #     ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" ||
-  #     ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" ||
-  #     true
-  #   done
-  # done
-
   echo ""
-  echo "📦 Installing Split APKs..."
-  for user in "${USERS[@]}"; do
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Chrome"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Gboard"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Yandex"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Chrome"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Gboard"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Yandex"/*.apk || true
+  echo "📦 Installing Main APKs..."
+
+  for apk in "$AVATR_DIR"/*.apk; do
+    [[ -f "$apk" ]] || continue
+
+    echo "   → $(basename "$apk")"
+
+    for user in "${USERS[@]}"; do
+      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" ||
+      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" ||
+      true
+    done
   done
+
+echo ""
+echo "📦 Installing Split APKs..."
+
+for split_dir in "$AVATR_DIR"/*/; do
+  [[ -d "$split_dir" ]] || continue
+
+  split_name=$(basename "$split_dir")
+
+split_apks=()
+
+for apk in "$split_dir"/*.apk; do
+    [[ -f "$apk" ]] || continue
+
+    file=$(basename "$apk")
+
+    case "$file" in
+        base.apk)
+            split_apks+=("$apk")
+            ;;
+        split_*.apk)
+            split_apks+=("$apk")
+            ;;
+    esac
+done
+
+  [[ ${#split_apks[@]} -eq 0 ]] && continue
+
+  echo "   📂 $split_name"
+
+  installer="com.huawei.appmarket.vehicle"
+
+  case "$split_name" in
+    Downloader)
+      installer="com.huawei.appinstaller.car"
+      ;;
+  esac
+
+  for user in "${USERS[@]}"; do
+    echo "      👤 User $user"
+
+    ADB_CMD install-multiple \
+      -r -d -g \
+      --user "$user" \
+      -i "$installer" \
+      "${split_apks[@]}" || true
+  done
+done
 
   echo ""
   echo "🔧 Setting Permissions..."
