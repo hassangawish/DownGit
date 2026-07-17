@@ -719,7 +719,7 @@ Zeekr9x() {
   disconnect_if_wireless
 }
 
-Premissions() {
+AIOPPREMISSION() {
   clear
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
