@@ -886,20 +886,20 @@ AVATR() {
     return
   fi
 
-  echo ""
-  echo "📦 Installing Main APKs..."
+  # echo ""
+  # echo "📦 Installing Main APKs..."
 
-  for apk in "$AVATR_DIR"/*.apk; do
-    [[ -f "$apk" ]] || continue
+  # for apk in "$AVATR_DIR"/*.apk; do
+  #   [[ -f "$apk" ]] || continue
 
-    echo "   → $(basename "$apk")"
+  #   echo "   → $(basename "$apk")"
 
-    for user in "${USERS[@]}"; do
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" ||
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" ||
-      true
-    done
-  done
+  #   for user in "${USERS[@]}"; do
+  #     ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" ||
+  #     ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" ||
+  #     true
+  #   done
+  # done
 
 echo ""
 echo "📦 Installing Split APKs..."
