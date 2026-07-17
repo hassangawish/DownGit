@@ -901,24 +901,37 @@ AVATR() {
     done
   done
 
-  echo ""
-  echo "📦 Installing Split APKs..."
+echo ""
+echo "📦 Installing Split APKs..."
+
+for split_dir in "$AVATR_DIR"/*/; do
+  [[ -d "$split_dir" ]] || continue
+
+  split_name=$(basename "$split_dir")
+
+  split_apks=("$split_dir"/*.apk)
+  [[ -f "${split_apks[0]}" ]] || continue
+
+  echo "   📂 $split_name"
+
+  installer="com.huawei.appmarket.vehicle"
+
+  case "$split_name" in
+    Downloader)
+      installer="com.huawei.appinstaller.car"
+      ;;
+  esac
 
   for user in "${USERS[@]}"; do
+    echo "      👤 User $user"
 
-    if compgen -G "$AVATR_DIR/Ayah/*.apk" > /dev/null; then
-      ADB_CMD install-multiple -r -d -g --user "$user" \
-      -i com.huawei.appmarket.vehicle \
-      "$AVATR_DIR"/Ayah/*.apk || true
-    fi
-
-    if compgen -G "$AVATR_DIR/Downloader/*.apk" > /dev/null; then
-      ADB_CMD install-multiple -r -d -g --user "$user" \
-      -i com.huawei.appinstaller.car \
-      "$AVATR_DIR"/Downloader/*.apk || true
-    fi
-
+    ADB_CMD install-multiple \
+      -r -d -g \
+      --user "$user" \
+      -i "$installer" \
+      "${split_apks[@]}" || true
   done
+done
 
   echo ""
   echo "🔧 Setting Permissions..."
