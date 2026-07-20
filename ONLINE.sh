@@ -555,16 +555,13 @@ Jetour() {
   ADB_CMD push "$DESKTOP_APK/Jetour" /data/local/tmp/ >/dev/null || true
 
   for user in "${USERS[@]}"; do
-    echo "   Installing Jetour APKs for User $user..."
     ADB_CMD shell "
       cd /data/local/tmp/Jetour
       for f in *.apk; do
         pm install --user $user \"\$f\" || true
       done
-    " || true
+    "
   done
-
-  install_from_subfolders "$DESKTOP_APK/Jetour" "Jetour"
 
   set_permissions
 
