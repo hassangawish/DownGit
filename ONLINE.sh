@@ -540,6 +540,7 @@ Jetour() {
   clear
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
+
   echo "🚀 Installing Apps on Jetour"
 
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -550,22 +551,36 @@ Jetour() {
     USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+
   echo "👥 Users: ${USERS[*]}"
 
-  ADB_CMD push "$DESKTOP_APK/Jetour" /data/local/tmp/ >/dev/null || true
+  echo "📤 Preparing device..."
+  ADB_CMD shell "rm -rf /data/local/tmp/Jetour && mkdir -p /data/local/tmp/Jetour"
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell "
-      cd /data/local/tmp/Jetour
-      for f in *.apk; do
-        pm install --user $user \"\$f\" || true
-      done
-    "
-  done
+  echo "📤 Pushing APKs..."
+  ADB_CMD push "$DESKTOP_APK/Jetour/." /data/local/tmp/Jetour/ >/dev/null || {
+    echo "❌ Failed to push APKs."
+    return
+  }
+
+  echo "📦 Installing APKs..."
+
+  ADB_CMD shell <<'EOF'
+for apk in /data/local/tmp/Jetour/*.apk; do
+    [ -f "$apk" ] || continue
+
+    echo "Installing: $(basename "$apk")"
+
+    pm install -r -g "$apk"
+
+    echo "-------------------------"
+done
+EOF
 
   set_permissions
 
   echo "🔧 Whitelisting & Background permissions..."
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
@@ -579,6 +594,7 @@ Jetour() {
   done
 
   echo "✅ Installed Successfully"
+
   disconnect_if_wireless
 }
 
