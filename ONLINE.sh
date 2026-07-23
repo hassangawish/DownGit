@@ -748,6 +748,9 @@ Premissions() {
   echo "Step 3: Clearing launcher cache..."
   ADB_CMD shell pm clear --user 0 com.zeekr.carlauncher3d 2>/dev/null || true
 
+  echo "Step 4: Unlocking Sim-Card..."
+  ADB_CMD shell pm disable-user --user 0 com.zeekr.housekeeper
+
   echo "Rebooting device to apply changes..."
   ADB_CMD reboot
   wait_for_adb
