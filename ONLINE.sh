@@ -627,6 +627,7 @@ G700() {
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
+  ADB_CMD shell am start -n qa.essa.elauncher/.MainActivity
 
   for user in "${USERS[@]}"; do
     ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
