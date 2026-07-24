@@ -869,7 +869,7 @@ BYD_OLD() {
 
 AVATR() {
   clear
-  select_device || { echo "Returning to main menu..."; return; }
+  select_device
   wait_for_adb
 
   echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
@@ -884,122 +884,72 @@ AVATR() {
     USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
 
-  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=(0)
+    echo "⚠️ Could not detect users, using User 0."
+  fi
 
   echo "👥 Found Users: ${USERS[*]}"
 
-  # تعطيل Package Installer مؤقتاً
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
   sleep 2
 
-  AVATR_DIR="$DESKTOP_APK/AVATR"
+  setopt nullglob
 
-  if [[ ! -d "$AVATR_DIR" ]]; then
-    echo "❌ Folder not found: $AVATR_DIR"
-    disconnect_if_wireless
-    return
-  fi
-
-  echo ""
-  echo "📦 Installing Main APKs..."
-
-  for apk in "$AVATR_DIR"/*.apk; do
-    [[ -f "$apk" ]] || continue
+  for apk in AVATR/*.apk; do
+    [[ -e "$apk" ]] || continue
 
     echo "   → $(basename "$apk")"
 
     for user in "${USERS[@]}"; do
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" ||
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" ||
-      true
+      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || \
+      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || true
     done
   done
 
-echo ""
-echo "📦 Installing Split APKs..."
-
-for split_dir in "$AVATR_DIR"/*/; do
-  [[ -d "$split_dir" ]] || continue
-
-  split_name=$(basename "$split_dir")
-
-split_apks=()
-
-for apk in "$split_dir"/*.apk; do
-    [[ -f "$apk" ]] || continue
-
-    file=$(basename "$apk")
-
-    case "$file" in
-        base.apk)
-            split_apks+=("$apk")
-            ;;
-        split_*.apk)
-            split_apks+=("$apk")
-            ;;
-    esac
-done
-
-  [[ ${#split_apks[@]} -eq 0 ]] && continue
-
-  echo "   📂 $split_name"
-
-  installer="com.huawei.appmarket.vehicle"
-
-  case "$split_name" in
-    Downloader)
-      installer="com.huawei.appinstaller.car"
-      ;;
-  esac
+  unsetopt nullglob
 
   for user in "${USERS[@]}"; do
-    echo "      👤 User $user"
-
-    ADB_CMD install-multiple \
-      -r -d -g \
-      --user "$user" \
-      -i "$installer" \
-      "${split_apks[@]}" || true
+    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
+    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
-done
-
-  echo ""
-  echo "🔧 Setting Permissions..."
-
-  set_permissions
-
-  echo ""
-  echo "🔋 Whitelisting..."
-
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
 
   for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
+    ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
+    ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
+    ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
+    ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
+
+    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
+    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
+    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
+
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+
+    ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
+    ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
 
     ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
       nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
-
     ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
+
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
+    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
   done
 
-  echo ""
-  echo "🔓 Re-enabling Package Installer..."
+  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
+  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
 
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
   done
 
-  echo ""
-  echo "🎉 AVATR Installation Completed Successfully!"
+  echo "🎉 AVATR Installation Completed!"
 
   disconnect_if_wireless
 }
