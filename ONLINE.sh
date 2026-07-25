@@ -504,6 +504,8 @@ voice() {
   ADB_CMD shell pm disable-user "com.byd.autovoice" || true
   ADB_CMD shell pm disable-user "com.byd.autovoice.tts" || true
   ADB_CMD shell pm disable-user "com.byd.autovoice.engine" || true
+  sleep 2
+  ADB_CMD shell pm enable com.byd.autovoice || true
   echo "Done"
   disconnect_if_wireless
 }
