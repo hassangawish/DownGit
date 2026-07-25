@@ -199,24 +199,86 @@ install_apks_in_folder() {
 
 # === Dynamic Subfolders (Auto ALL) ===
 install_from_subfolders() {
-  local base_dir="$1"
-  local section="$2"
-  echo ""
-  echo "📂 [$section] Installing from ALL subfolders automatically..."
-  local found_any=0
-  for sub in "$base_dir"/*/; do
-    [[ -d "$sub" ]] || continue
-    subname=$(basename "$sub")
-    echo "📦 Subfolder: $subname"
-    found_any=1
-    for user in "${USERS[@]}"; do
-      echo "   👤 User $user"
-      ADB_CMD install-multiple -r -d -g --user "$user" "$sub"*.apk || true
+    local base_dir="$1"
+    local section="$2"
+
+    echo ""
+    echo "📂 [$section] Installing from ALL subfolders automatically..."
+
+    local found_any=0
+
+    for sub in "$base_dir"/*/; do
+        [[ -d "$sub" ]] || continue
+
+        found_any=1
+        local subname
+        subname=$(basename "$sub")
+
+        echo "📦 Subfolder: $subname"
+
+        # استخراج اسم الباكدج من أول APK داخل الفولدر
+        local first_apk
+        first_apk=$(find "$sub" -maxdepth 1 -name "*.apk" | head -n 1)
+
+        local pkg=""
+        if [[ -n "$first_apk" ]]; then
+            pkg=$(get_package_name "$first_apk")
+        fi
+
+        for user in "${USERS[@]}"; do
+
+            output=$(ADB_CMD install-multiple -r -d -g --user "$user" "$sub"*.apk 2>&1)
+
+            # نجاح
+            if echo "$output" | grep -q "Success"; then
+                printf "   👤 User %-3s ✅ Installed\n" "$user"
+                continue
+            fi
+
+            # Clone User (Geely)
+            if echo "$output" | grep -qi "geely can't only install on clone user"; then
+
+                if [[ -n "$pkg" ]]; then
+                    ADB_CMD shell cmd package install-existing --user "$user" "$pkg" >/dev/null 2>&1 || true
+                    printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+                else
+                    printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
+                fi
+
+                continue
+            fi
+
+            # Signature conflict
+            if echo "$output" | grep -q "INSTALL_FAILED_UPDATE_INCOMPATIBLE"; then
+                printf "   👤 User %-3s ⚠️ Signature Mismatch\n" "$user"
+                continue
+            fi
+
+            # Version downgrade
+            if echo "$output" | grep -q "INSTALL_FAILED_VERSION_DOWNGRADE"; then
+                printf "   👤 User %-3s ⚠️ Version Downgrade\n" "$user"
+                continue
+            fi
+
+            # Shared library missing
+            if echo "$output" | grep -q "INSTALL_FAILED_MISSING_SHARED_LIBRARY"; then
+                printf "   👤 User %-3s ⚠️ Missing Library\n" "$user"
+                continue
+            fi
+
+            # أي خطأ آخر
+            printf "   👤 User %-3s ❌ Failed\n" "$user"
+            echo "$output"
+
+        done
+
+        echo "━━━━━━━━━━━━━━━━━━━━━━"
+
     done
-  done
-  if [[ $found_any -eq 0 ]]; then
-    echo "⚠️ No subfolders found in $base_dir"
-  fi
+
+    if [[ $found_any -eq 0 ]]; then
+        echo "⚠️ No subfolders found in $base_dir"
+    fi
 }
 
 # === Reusable Permissions Function (Full Feedback) ===
