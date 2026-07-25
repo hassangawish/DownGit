@@ -519,7 +519,7 @@ ROX() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on ROX"
-  USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   if [[ ${#USERS[@]} -eq 0 ]]; then
     USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
@@ -558,7 +558,6 @@ Rox-Unlock() {
   echo "Unlocking Screen (rox)"
   ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
   ADB_CMD shell setprop vnrpst.engineermode.geofenceLock '{"geofenceLock_state":0,"geofenceLock_time":0}'
-  ADB_CMD shell setprop vnrpst.engineermode.geofenceLock '{"geofenceLock_state":0,"geofenceLock_time":0}'
   ADB_CMD shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
   ADB_CMD shell pm disable-user --user 0 com.roxmotor.sceneeditapp
   ADB_CMD reboot
@@ -570,6 +569,17 @@ zeekr() {
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
   echo "🚀 Installing Apps on Zeekr"
+
+    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  fi
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  fi
+  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+  echo "👥 Users: ${USERS[*]}"
+
   ADB_CMD root || true
   ADB_CMD shell su -c "pm disable com.ecarx.xsfinstallverifier" || true
   ADB_CMD shell su -c "settings put global package_verifier_enable 0" || true
@@ -580,19 +590,10 @@ zeekr() {
 
   ADB_CMD shell settings put global auto_time 1 || true
   ADB_CMD shell settings put global auto_time_zone 1 || true
-  ADB_CMD shell settings put global time_zone Asia/Karachi || true
-  ADB_CMD shell service call alarm 3 s16 "Asia/Karachi" || true
+  ADB_CMD shell settings put global time_zone Asia/Dubai || true
+  ADB_CMD shell service call alarm 3 s16 "Asia/Dubai" || true
 
-  ADB_CMD shell ime enable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-  ADB_CMD shell ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-  ADB_CMD shell pm grant jp.co.c_lis.ccl.morelocale android.permission.CHANGE_CONFIGURATION || true
-
-  ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
-  ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
-  ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
-  ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
-  ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
-  ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+  set_permissions
 
   ADB_CMD shell appops set --user 0 ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
   ADB_CMD shell settings put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
@@ -607,25 +608,21 @@ dashing() {
   wait_for_adb
   echo "🚀 Installing Apps on Dashing"
 
+    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  fi
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  fi
+  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+  echo "👥 Users: ${USERS[*]}"
+
   install_apks_in_folder "$DESKTOP_APK/Dashing"
   ADB_CMD shell am start -n com.appindustry.everywherelauncher/com.michaelflisar.everywherelauncher.ui.activitiesandfragments.MainActivity || true
   ADB_CMD install -g "$DESKTOP_APK/Dashing/simplecontrol.apk" || true
 
-  ADB_CMD shell settings put global auto_time 1 || true
-  ADB_CMD shell settings put global auto_time_zone 1 || true
-  ADB_CMD shell settings put global time_zone Asia/Karachi || true
-  ADB_CMD shell service call alarm 3 s16 "Asia/Karachi" || true
-
-  ADB_CMD shell ime enable com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-  ADB_CMD shell ime set com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-  ADB_CMD shell pm grant jp.co.c_lis.ccl.morelocale android.permission.CHANGE_CONFIGURATION || true
-
-  ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
-  ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
-  ADB_CMD shell pm grant app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
-  ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
-  ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
-  ADB_CMD shell cmd appops set app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
+  set_permissions
 
   ADB_CMD shell appops set --user 0 ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
   ADB_CMD shell settings put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
@@ -720,7 +717,7 @@ Jetour() {
   echo "📦 Installing APKs..."
 
   ADB_CMD shell <<'EOF'
-for apk in /data/local/tmp/Jetour/*.apk; do
+  for apk in /data/local/tmp/Jetour/*.apk; do
     [ -f "$apk" ] || continue
 
     echo "Installing: $(basename "$apk")"
@@ -728,7 +725,7 @@ for apk in /data/local/tmp/Jetour/*.apk; do
     pm install -r -g "$apk"
 
     echo "-------------------------"
-done
+  done
 EOF
 
   set_permissions
@@ -829,6 +826,7 @@ Zeekr9x() {
   ADB_CMD shell settings put global auto_time 1 || true
   ADB_CMD shell settings put global auto_time_zone 1 || true
   ADB_CMD shell settings put global time_zone Asia/Dubai || true
+  ADB_CMD shell service call alarm 3 s16 "Asia/Dubai" || true
 
   echo "✅ Installed Successfully"
   disconnect_if_wireless
@@ -857,20 +855,15 @@ Premissions() {
   wait_for_adb
   sleep 15
 
-  echo "Step 4: Post-reboot cleanup..."
+  echo "Step 5: Post-reboot cleanup..."
   ADB_CMD shell pm clear ecarx.notificationcenterui 2>/dev/null || true
   ADB_CMD shell settings put system system_locales en 2>/dev/null || true
   ADB_CMD shell pm uninstall --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
   ADB_CMD shell pm clear --user 0 com.zeekr.carlauncher3d 2>/dev/null || true
 
-  echo "Step 5: Disabling unnecessary services..."
+  echo "Step 6: Disabling unnecessary services..."
   ADB_CMD shell pm disable-user com.zeekr.fwk.common 2>/dev/null || true
   ADB_CMD shell pm disable-user --user 0 com.zeekr.fwk.common 2>/dev/null || true
-
-  echo "Step 6: Setting time and timezone to Dubai..."
-  ADB_CMD shell settings put global auto_time 1 2>/dev/null || true
-  ADB_CMD shell settings put global auto_time_zone 1 2>/dev/null || true
-  ADB_CMD shell settings put global time_zone Asia/Dubai 2>/dev/null || true
 
   echo ""
   echo "🎉 Zeekr Permissions Fixed Successfully!"
