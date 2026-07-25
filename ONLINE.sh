@@ -1176,7 +1176,7 @@ menu() {
   while true; do
    clear
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║       💻 BEST STORE AIO Sript (BY: Hassan Gawish) 💻         ║"
+    echo "║       💻 BEST STORE AIO Sript (BY: Hassan Gawish)           ║"
     echo "║     Advanced ADB Installer for Chinese Car Head Units        ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
     echo "║  1. 📱 Install Apps (BYD)                                    ║"
