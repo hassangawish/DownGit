@@ -13,6 +13,10 @@ if [ -n "$BASH_VERSION" ]; then
 fi
 
 clear
+
+# Resize Terminal to 65 columns × 30 rows
+printf '\e[8;30;65t'
+
 set +e
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]:-$0}")" && pwd)"
