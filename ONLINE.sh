@@ -787,10 +787,10 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  # install_apks_in_folder "$DESKTOP_APK/LYNK"
+  install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
-  # install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
+  install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
   set_permissions
 
