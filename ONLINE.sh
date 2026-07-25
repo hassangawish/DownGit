@@ -1194,7 +1194,7 @@ menu() {
     echo "║ 11. 📱 Install Apps (G700)                                   ║"
     echo "║ 12. 📱 Install Apps (LYNK&CO)                                ║"
     echo "║ 13. 📱 Install Apps (Zeeker9X)                               ║"
-    echo "║ 14. 🔑 Zeekr 9X Install Permission                           ║"
+    echo "║ 14. 🔓 Unlock States (Zeeker9X)                              ║"
     echo "║ 15. 📱 Install Apps (Leepmotor)                              ║"
     echo "║ 16. 📱 Install Apps (BYD_OLD)                                ║"
     echo "║ 17. 📱 Install Apps (AVATR)                                  ║"
