@@ -644,6 +644,7 @@ LYNK() {
   clear
   select_device || { echo "Returning to main menu..."; return; }
   wait_for_adb
+
   echo "🚀 Installing Apps on LYNK&CO"
 
   USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
@@ -654,6 +655,7 @@ LYNK() {
     USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
   fi
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
@@ -662,11 +664,46 @@ LYNK() {
 
   install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
+  #########################################################
+  # Clone User Sync
+  #########################################################
+
+  echo "🔍 Searching for Clone User..."
+
+  CLONE_USER=$(ADB_CMD shell dumpsys user 2>/dev/null | \
+    grep -iB2 -A5 -E "isClone.?=.?true|FLAG_CLONE_PROFILE|clone profile|Clone" | \
+    grep -oE 'UserInfo\{[0-9]+' | head -1 | cut -d'{' -f2)
+
+  if [[ -n "$CLONE_USER" ]]; then
+
+    echo "👤 Clone User Detected: $CLONE_USER"
+    echo "🔄 Installing existing apps for Clone User..."
+
+    ADB_CMD shell pm list packages --user 0 | cut -d: -f2 | while read -r PKG
+    do
+      [[ -z "$PKG" ]] && continue
+
+      ADB_CMD shell cmd package install-existing --user "$CLONE_USER" "$PKG" \
+        >/dev/null 2>&1 || true
+    done
+
+    echo "✅ Clone User synchronized."
+
+  else
+
+    echo "ℹ️ No Clone User detected."
+
+  fi
+
+  #########################################################
+
   set_permissions
 
   echo "🔧 Whitelisting & Background permissions..."
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
+
   ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
   ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
 
@@ -678,6 +715,7 @@ LYNK() {
   done
 
   echo "✅ Installed Successfully"
+
   disconnect_if_wireless
 }
 
