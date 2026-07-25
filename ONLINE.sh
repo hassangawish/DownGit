@@ -102,25 +102,48 @@ wait_for_adb() {
 install_apk_safe() {
   local apk="$1"
   local pkg=""
+  local output=""
+
   echo "📦 Installing: $(basename "$apk")"
+
   pkg=$(get_package_name "$apk")
+
   if [[ "$USE_ALL_USERS" == true ]]; then
     echo "🚀 Super Mode → install per user"
+
     for user in $(get_all_users); do
       echo "👤 User: $user"
-      ADB_CMD install -r -d -g --user "$user" "$apk" || true
+
+      output=$(ADB_CMD install -r -d -g --user "$user" "$apk" 2>&1)
+      echo "$output"
+
+      # Geely Clone User
+      if echo "$output" | grep -qi "geely can't only install on clone user"; then
+        if [[ -n "$pkg" ]]; then
+          echo "🔄 Clone User detected → Installing existing package..."
+          ADB_CMD shell cmd package install-existing --user "$user" "$pkg" || true
+        else
+          echo "❌ Couldn't detect package name."
+        fi
+      fi
     done
+
     return
   fi
+
   output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
   echo "$output"
+
   if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
     echo "💣 Conflict detected..."
+
     if [[ -n "$pkg" ]]; then
       echo "🗑 Removing old version: $pkg"
+
       for user in $(get_all_users); do
         ADB_CMD shell pm uninstall --user "$user" "$pkg" || true
       done
+
       ADB_CMD install -r -d -g "$apk" || true
     else
       echo "❌ Couldn't detect package"
@@ -664,38 +687,38 @@ LYNK() {
 
   install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
-  #########################################################
-  # Clone User Sync
-  #########################################################
+  # #########################################################
+  # # Clone User Sync
+  # #########################################################
 
-  echo "🔍 Searching for Clone User..."
+  # echo "🔍 Searching for Clone User..."
 
-  CLONE_USER=$(ADB_CMD shell dumpsys user 2>/dev/null | \
-    grep -iB2 -A5 -E "isClone.?=.?true|FLAG_CLONE_PROFILE|clone profile|Clone" | \
-    grep -oE 'UserInfo\{[0-9]+' | head -1 | cut -d'{' -f2)
+  # CLONE_USER=$(ADB_CMD shell dumpsys user 2>/dev/null | \
+  #   grep -iB2 -A5 -E "isClone.?=.?true|FLAG_CLONE_PROFILE|clone profile|Clone" | \
+  #   grep -oE 'UserInfo\{[0-9]+' | head -1 | cut -d'{' -f2)
 
-  if [[ -n "$CLONE_USER" ]]; then
+  # if [[ -n "$CLONE_USER" ]]; then
 
-    echo "👤 Clone User Detected: $CLONE_USER"
-    echo "🔄 Installing existing apps for Clone User..."
+  #   echo "👤 Clone User Detected: $CLONE_USER"
+  #   echo "🔄 Installing existing apps for Clone User..."
 
-    ADB_CMD shell pm list packages --user 0 | cut -d: -f2 | while read -r PKG
-    do
-      [[ -z "$PKG" ]] && continue
+  #   ADB_CMD shell pm list packages --user 0 | cut -d: -f2 | while read -r PKG
+  #   do
+  #     [[ -z "$PKG" ]] && continue
 
-      ADB_CMD shell cmd package install-existing --user "$CLONE_USER" "$PKG" \
-        >/dev/null 2>&1 || true
-    done
+  #     ADB_CMD shell cmd package install-existing --user "$CLONE_USER" "$PKG" \
+  #       >/dev/null 2>&1 || true
+  #   done
 
-    echo "✅ Clone User synchronized."
+  #   echo "✅ Clone User synchronized."
 
-  else
+  # else
 
-    echo "ℹ️ No Clone User detected."
+  #   echo "ℹ️ No Clone User detected."
 
-  fi
+  # fi
 
-  #########################################################
+  # #########################################################
 
   set_permissions
 
