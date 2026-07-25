@@ -227,6 +227,11 @@ set_permissions() {
         echo "       → Failed to set default keyboard"
       fi
 
+      echo "       → Enabling Accessibility Services"
+      ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
+        "nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService" \
+        2>/dev/null || true
+
     else
       echo "       → Gboard not installed for User $user"
     fi
@@ -246,7 +251,6 @@ set_permissions() {
     else
       echo "     → ReVanced Maps (not installed, skipped)"
     fi
-
   done
 }
 
