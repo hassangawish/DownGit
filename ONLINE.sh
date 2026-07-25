@@ -288,9 +288,16 @@ set_permissions() {
   for user in "${USERS[@]}"; do
     echo "   Processing User: $user"
 
+    # ==========================================================
     # 1. REQUEST_INSTALL_PACKAGES
-    for pkg in com.esaba.downloader com.apkpure.aegon com.revanced.net.revancedmanager cm.aptoide.pt; do
-      if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "$pkg"; then
+    # ==========================================================
+    for pkg in \
+      com.esaba.downloader \
+      com.apkpure.aegon \
+      com.revanced.net.revancedmanager \
+      cm.aptoide.pt; do
+
+      if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "^package:$pkg$"; then
         echo "     → $pkg (found)"
         ADB_CMD shell appops set --user "$user" "$pkg" REQUEST_INSTALL_PACKAGES allow 2>/dev/null || true
       else
@@ -298,51 +305,77 @@ set_permissions() {
       fi
     done
 
-    # 2. Google Keyboard (IME)
+    # ==========================================================
+    # 2. Google Keyboard (Gboard)
+    # ==========================================================
     echo "     → Setting Google Keyboard (LatinIME)"
 
-    if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "com.google.android.inputmethod.latin"; then
+    if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "^package:com.google.android.inputmethod.latin$"; then
+
       echo "       → Gboard installed"
 
-      if ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME; then
+      if ADB_CMD shell ime enable --user "$user" \
+        com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1; then
         echo "       → IME enabled"
       else
         echo "       → Failed to enable IME"
       fi
 
-      if ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME; then
+      if ADB_CMD shell ime set --user "$user" \
+        com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1; then
         echo "       → Default keyboard set"
       else
         echo "       → Failed to set default keyboard"
       fi
 
       echo "       → Enabling Accessibility Services"
+
       ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
         "nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService" \
-        2>/dev/null || true
+        >/dev/null 2>&1 || true
 
     else
-      echo "       → Gboard not installed for User $user"
+      echo "       → Gboard not installed"
     fi
 
-    # 3. Maps Permissions (ReVanced + Yandex)
-    for pkg in app.revanced.android.apps.maps ru.yandex.yandexnavi; do
+    # ==========================================================
+    # 3. Navigation Apps Permissions
+    # ==========================================================
+    for pkg in \
+      app.revanced.android.apps.maps \
+      ru.yandex.yandexnavi \
+      com.waze; do
 
-      if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "$pkg"; then
-        echo "     → $pkg (found) → Setting location permissions"
+      if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "^package:$pkg$"; then
 
-        ADB_CMD shell pm grant --user "$user" "$pkg" android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
-        ADB_CMD shell pm grant --user "$user" "$pkg" android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
-        ADB_CMD shell pm grant --user "$user" "$pkg" android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
+        echo "     → $pkg (found)"
 
-        ADB_CMD shell cmd appops set --user "$user" "$pkg" ACCESS_FINE_LOCATION allow 2>/dev/null || true
-        ADB_CMD shell cmd appops set --user "$user" "$pkg" ACCESS_COARSE_LOCATION allow 2>/dev/null || true
-        ADB_CMD shell cmd appops set --user "$user" "$pkg" ACCESS_BACKGROUND_LOCATION allow 2>/dev/null || true
+        # Runtime Permissions
+        for perm in \
+          android.permission.ACCESS_FINE_LOCATION \
+          android.permission.ACCESS_COARSE_LOCATION \
+          android.permission.ACCESS_BACKGROUND_LOCATION; do
 
-        ADB_CMD shell cmd appops set --user "$user" "$pkg" RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-        ADB_CMD shell cmd appops set --user "$user" "$pkg" WAKE_LOCK allow 2>/dev/null || true
+          ADB_CMD shell pm grant --user "$user" "$pkg" "$perm" \
+            >/dev/null 2>&1 || true
+        done
 
+        # AppOps
+        for op in \
+          ACCESS_FINE_LOCATION \
+          ACCESS_COARSE_LOCATION \
+          ACCESS_BACKGROUND_LOCATION \
+          RUN_ANY_IN_BACKGROUND \
+          WAKE_LOCK; do
+
+          ADB_CMD shell cmd appops set --user "$user" "$pkg" "$op" allow \
+            >/dev/null 2>&1 || true
+        done
+
+        # Battery Optimization Whitelist
         ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
+
+        echo "       ✓ Permissions Applied"
 
       else
         echo "     → $pkg (not installed, skipped)"
