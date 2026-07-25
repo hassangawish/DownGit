@@ -298,6 +298,10 @@ set_permissions() {
         com.waze
     )
 
+    local background_pkgs=(
+        app.revanced.android.gms
+    )
+
     local runtime_perms=(
         android.permission.ACCESS_FINE_LOCATION
         android.permission.ACCESS_COARSE_LOCATION
@@ -318,7 +322,6 @@ set_permissions() {
 
         echo "   Processing User: $user"
 
-        # قراءة قائمة التطبيقات مرة واحدة فقط
         installed_pkgs="$(ADB_CMD shell pm list packages --user "$user" 2>/dev/null)"
 
         ############################################################
@@ -350,7 +353,6 @@ set_permissions() {
                 com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME \
                 >/dev/null 2>&1 || true
 
-            # Enable Accessibility
             ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 \
                 >/dev/null 2>&1 || true
 
@@ -365,7 +367,7 @@ set_permissions() {
         fi
 
         ############################################################
-        # Navigation Apps Permissions
+        # Navigation Apps
         ############################################################
         for pkg in "${nav_pkgs[@]}"; do
 
@@ -384,9 +386,34 @@ set_permissions() {
                 done
 
                 # Battery Optimization Whitelist
+                ADB_CMD shell dumpsys deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
                 ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
 
                 echo "       ✓ Permissions Applied"
+
+            else
+                echo "     → $pkg (not installed)"
+            fi
+
+        done
+
+        ############################################################
+        # Background Apps (microG)
+        ############################################################
+        for pkg in "${background_pkgs[@]}"; do
+
+            if echo "$installed_pkgs" | grep -q "^package:$pkg$"; then
+
+                echo "     → $pkg"
+
+                ADB_CMD shell cmd appops set --user "$user" "$pkg" RUN_IN_BACKGROUND allow >/dev/null 2>&1 || true
+                ADB_CMD shell cmd appops set --user "$user" "$pkg" RUN_ANY_IN_BACKGROUND allow >/dev/null 2>&1 || true
+                ADB_CMD shell cmd appops set --user "$user" "$pkg" WAKE_LOCK allow >/dev/null 2>&1 || true
+
+                ADB_CMD shell dumpsys deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
+                ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
+
+                echo "       ✓ Background Permissions Applied"
 
             else
                 echo "     → $pkg (not installed)"
@@ -851,20 +878,20 @@ LYNK() {
 
   set_permissions
 
-  echo "🔧 Whitelisting & Background permissions..."
+  # echo "🔧 Whitelisting & Background permissions..."
 
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
+  # ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
+  # ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
 
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
+  # ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
+  # ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
+  # for user in "${USERS[@]}"; do
+  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
+  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
+  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
+  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
+  # done
 
   echo "✅ Installed Successfully"
 
