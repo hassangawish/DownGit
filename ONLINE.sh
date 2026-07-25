@@ -318,7 +318,7 @@ set_permissions() {
 
         echo "   Processing User: $user"
 
-        # اقرأ قائمة البرامج مرة واحدة فقط
+        # قراءة قائمة التطبيقات مرة واحدة فقط
         installed_pkgs="$(ADB_CMD shell pm list packages --user "$user" 2>/dev/null)"
 
         ############################################################
@@ -336,7 +336,7 @@ set_permissions() {
         done
 
         ############################################################
-        # Gboard
+        # Google Keyboard + Accessibility
         ############################################################
         echo "     → Setting Google Keyboard"
 
@@ -350,18 +350,22 @@ set_permissions() {
                 com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME \
                 >/dev/null 2>&1 || true
 
+            # Enable Accessibility
+            ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 \
+                >/dev/null 2>&1 || true
+
             ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
                 "nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService" \
                 >/dev/null 2>&1 || true
 
-            echo "       ✓ Keyboard Ready"
+            echo "       ✓ Keyboard & Accessibility Ready"
 
         else
             echo "       → Gboard not installed"
         fi
 
         ############################################################
-        # Navigation Apps
+        # Navigation Apps Permissions
         ############################################################
         for pkg in "${nav_pkgs[@]}"; do
 
@@ -379,7 +383,7 @@ set_permissions() {
                     ADB_CMD shell cmd appops set --user "$user" "$pkg" "$op" allow >/dev/null 2>&1 || true
                 done
 
-                # Battery whitelist
+                # Battery Optimization Whitelist
                 ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
 
                 echo "       ✓ Permissions Applied"
@@ -840,10 +844,10 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "$DESKTOP_APK/LYNK"
+  # install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
-  install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
+  # install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
   set_permissions
 
