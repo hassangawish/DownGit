@@ -325,21 +325,31 @@ set_permissions() {
       echo "       → Gboard not installed for User $user"
     fi
 
-    # 3. ReVanced Maps Permissions
-    if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "app.revanced.android.apps.maps"; then
-      echo "     → ReVanced Maps (found) → Setting location permissions"
+    # 3. Maps Permissions (ReVanced + Yandex)
+    for pkg in app.revanced.android.apps.maps ru.yandex.yandexnavi; do
 
-      ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
-      ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
-      ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
+      if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "$pkg"; then
+        echo "     → $pkg (found) → Setting location permissions"
 
-      ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow 2>/dev/null || true
-      ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow 2>/dev/null || true
-      ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow 2>/dev/null || true
+        ADB_CMD shell pm grant --user "$user" "$pkg" android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
+        ADB_CMD shell pm grant --user "$user" "$pkg" android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
+        ADB_CMD shell pm grant --user "$user" "$pkg" android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
 
-    else
-      echo "     → ReVanced Maps (not installed, skipped)"
-    fi
+        ADB_CMD shell cmd appops set --user "$user" "$pkg" ACCESS_FINE_LOCATION allow 2>/dev/null || true
+        ADB_CMD shell cmd appops set --user "$user" "$pkg" ACCESS_COARSE_LOCATION allow 2>/dev/null || true
+        ADB_CMD shell cmd appops set --user "$user" "$pkg" ACCESS_BACKGROUND_LOCATION allow 2>/dev/null || true
+
+        ADB_CMD shell cmd appops set --user "$user" "$pkg" RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
+        ADB_CMD shell cmd appops set --user "$user" "$pkg" WAKE_LOCK allow 2>/dev/null || true
+
+        ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
+
+      else
+        echo "     → $pkg (not installed, skipped)"
+      fi
+
+    done
+
   done
 }
 
@@ -790,10 +800,10 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "$DESKTOP_APK/LYNK"
+  # install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
-  install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
+  # install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
   set_permissions
 
