@@ -290,6 +290,7 @@ set_permissions() {
         com.apkpure.aegon
         com.revanced.net.revancedmanager
         cm.aptoide.pt
+        qa.essa.elauncher
     )
 
     local nav_pkgs=(
@@ -452,19 +453,6 @@ central() {
 
   set_permissions
 
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
-
   ADB_CMD push "$DESKTOP_APK/apk/VIP.conf" /sdcard || true
   ADB_CMD shell am start -a android.intent.action.BYD_APPSTARTMANAGEMENT 2>/dev/null || echo "   (BYD Intent skipped - normal)"
 
@@ -526,31 +514,6 @@ ROX() {
     ADB_CMD shell am start --user "$user" -n com.roxmotor.nonpreinstallapp/com.roxmotor.nonpreinstallapp.MainActivity2 || true
   done
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" org.telegram.messenger.web REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-    ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-    ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
-    ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
-  done
-
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
-
   set_permissions
 
   echo "✅ Installed Successfully"
@@ -603,19 +566,6 @@ zeekr() {
   ADB_CMD shell appops set --user 0 ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
   ADB_CMD shell settings put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
 
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
-
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -649,19 +599,6 @@ dashing() {
   ADB_CMD shell appops set --user 0 ace.jun.simplecontrol BIND_ACCESSIBILITY_SERVICE allow || true
   ADB_CMD shell settings put secure enabled_accessibility_services ace.jun.simplecontrol/ace.jun.simplecontrol.service.AccService || true
 
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
-
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -687,19 +624,6 @@ lixiang() {
   USE_ALL_USERS=false
 
   install_from_subfolders "$DESKTOP_APK/LiAuto" "LiAuto"
-
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
 
   set_permissions
 
@@ -730,19 +654,6 @@ Haval() {
   install_from_subfolders "$DESKTOP_APK/Haval" "Haval"
 
   set_permissions
-
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
 
   echo "✅ Installed Successfully"
   disconnect_if_wireless
@@ -791,20 +702,6 @@ EOF
 
   set_permissions
 
-  echo "🔧 Whitelisting & Background permissions..."
-
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
-
   echo "✅ Installed Successfully"
 
   disconnect_if_wireless
@@ -834,19 +731,7 @@ G700() {
 
   set_permissions
 
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
   ADB_CMD shell am start -n qa.essa.elauncher/.MainActivity
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
 
   echo "✅ Installed Successfully"
   disconnect_if_wireless
@@ -871,27 +756,12 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  # install_apks_in_folder "$DESKTOP_APK/LYNK"
+  install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
-  # install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
+  install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
   set_permissions
-
-  # echo "🔧 Whitelisting & Background permissions..."
-
-  # ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  # ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-
-  # ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  # ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  # for user in "${USERS[@]}"; do
-  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-  #   ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  # done
 
   echo "✅ Installed Successfully"
 
@@ -922,23 +792,6 @@ Zeekr9x() {
 
   set_permissions
 
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
-    ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
-  done
-
-  ADB_CMD shell ime enable --user 0 com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-  ADB_CMD shell ime set --user 0 com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
   ADB_CMD shell ime enable --user 10 com.touchtype.swiftkez/com.touchtype.KeyboardService >/dev/null 2>&1 || true
   ADB_CMD shell ime set --user 10 com.touchtype.swiftkez/com.touchtype.KeyboardService >/dev/null 2>&1 || true
 
@@ -1026,19 +879,6 @@ Leapmotor() {
 
   set_permissions
 
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
-
   echo "✅ Installed Successfully"
   disconnect_if_wireless
 }
@@ -1066,19 +906,6 @@ BYD_OLD() {
   ADB_CMD push "$DESKTOP_APK/apk/VIP.conf" /sdcard || true
 
   set_permissions
-
-  echo "🔧 Whitelisting & Background permissions..."
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms 2>/dev/null || true
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.apps.maps 2>/dev/null || true
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps RUN_ANY_IN_BACKGROUND allow 2>/dev/null || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps WAKE_LOCK allow 2>/dev/null || true
-  done
 
   echo "✅ Installed Successfully"
   disconnect_if_wireless
@@ -1134,33 +961,7 @@ AVATR() {
     ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
   done
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell appops set --user "$user" com.esaba.downloader REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" com.apkpure.aegon REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" com.revanced.net.revancedmanager REQUEST_INSTALL_PACKAGES allow || true
-    ADB_CMD shell appops set --user "$user" cm.aptoide.pt REQUEST_INSTALL_PACKAGES allow || true
-
-    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
-    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
-    ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
-
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow || true
-
-    ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-    ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-
-    ADB_CMD shell settings --user "$user" put secure enabled_accessibility_services \
-      nu.back.button/.service.BackButtonService:com.appspot.app58us.backkey/.BackkeyService || true
-    ADB_CMD shell settings --user "$user" put secure accessibility_enabled 1 || true
-
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms RUN_ANY_IN_BACKGROUND allow || true
-    ADB_CMD shell cmd appops set --user "$user" app.revanced.android.gms WAKE_LOCK allow || true
-  done
-
-  ADB_CMD shell dumpsys deviceidle whitelist +app.revanced.android.gms || true
-  ADB_CMD shell cmd deviceidle whitelist +app.revanced.android.gms || true
+  set_permissions
 
   for user in "${USERS[@]}"; do
     ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
