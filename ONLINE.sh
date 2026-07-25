@@ -192,7 +192,6 @@ install_from_subfolders() {
   fi
 }
 
-# === Reusable Permissions Function ===
 # === Reusable Permissions Function (Full Feedback) ===
 set_permissions() {
   echo "🔧 Setting permissions for User(s)..."
@@ -212,26 +211,42 @@ set_permissions() {
 
     # 2. Google Keyboard (IME)
     echo "     → Setting Google Keyboard (LatinIME)"
-    if ADB_CMD shell ime list 2>/dev/null | grep -q "com.google.android.inputmethod.latin"; then
-      echo "       → Keyboard found, enabling..."
-      ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
-      ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME >/dev/null 2>&1 || true
+
+    if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "com.google.android.inputmethod.latin"; then
+      echo "       → Gboard installed"
+
+      if ADB_CMD shell ime enable --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME; then
+        echo "       → IME enabled"
+      else
+        echo "       → Failed to enable IME"
+      fi
+
+      if ADB_CMD shell ime set --user "$user" com.google.android.inputmethod.latin/com.android.inputmethod.latin.LatinIME; then
+        echo "       → Default keyboard set"
+      else
+        echo "       → Failed to set default keyboard"
+      fi
+
     else
-      echo "       → Google Keyboard not installed (skipped)"
+      echo "       → Gboard not installed for User $user"
     fi
 
     # 3. ReVanced Maps Permissions
     if ADB_CMD shell pm list packages --user "$user" 2>/dev/null | grep -q "app.revanced.android.apps.maps"; then
       echo "     → ReVanced Maps (found) → Setting location permissions"
+
       ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
       ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
       ADB_CMD shell pm grant --user "$user" app.revanced.android.apps.maps android.permission.ACCESS_BACKGROUND_LOCATION 2>/dev/null || true
+
       ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_FINE_LOCATION allow 2>/dev/null || true
       ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_COARSE_LOCATION allow 2>/dev/null || true
       ADB_CMD shell cmd appops set --user "$user" app.revanced.android.apps.maps ACCESS_BACKGROUND_LOCATION allow 2>/dev/null || true
+
     else
       echo "     → ReVanced Maps (not installed, skipped)"
     fi
+
   done
 }
 
@@ -682,43 +697,10 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "$DESKTOP_APK/LYNK"
+  # install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
-  install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
-
-  # #########################################################
-  # # Clone User Sync
-  # #########################################################
-
-  # echo "🔍 Searching for Clone User..."
-
-  # CLONE_USER=$(ADB_CMD shell dumpsys user 2>/dev/null | \
-  #   grep -iB2 -A5 -E "isClone.?=.?true|FLAG_CLONE_PROFILE|clone profile|Clone" | \
-  #   grep -oE 'UserInfo\{[0-9]+' | head -1 | cut -d'{' -f2)
-
-  # if [[ -n "$CLONE_USER" ]]; then
-
-  #   echo "👤 Clone User Detected: $CLONE_USER"
-  #   echo "🔄 Installing existing apps for Clone User..."
-
-  #   ADB_CMD shell pm list packages --user 0 | cut -d: -f2 | while read -r PKG
-  #   do
-  #     [[ -z "$PKG" ]] && continue
-
-  #     ADB_CMD shell cmd package install-existing --user "$CLONE_USER" "$PKG" \
-  #       >/dev/null 2>&1 || true
-  #   done
-
-  #   echo "✅ Clone User synchronized."
-
-  # else
-
-  #   echo "ℹ️ No Clone User detected."
-
-  # fi
-
-  # #########################################################
+  # install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
   set_permissions
 
