@@ -299,10 +299,6 @@ set_permissions() {
         com.waze
     )
 
-    local background_pkgs=(
-        app.revanced.android.gms
-    )
-
     local runtime_perms=(
         android.permission.ACCESS_FINE_LOCATION
         android.permission.ACCESS_COARSE_LOCATION
@@ -386,7 +382,7 @@ set_permissions() {
                     ADB_CMD shell cmd appops set --user "$user" "$pkg" "$op" allow >/dev/null 2>&1 || true
                 done
 
-                # Battery Optimization Whitelist
+                # Battery Optimization
                 ADB_CMD shell dumpsys deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
                 ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
 
@@ -399,28 +395,62 @@ set_permissions() {
         done
 
         ############################################################
-        # Background Apps (microG)
+        # microG Permissions
         ############################################################
-        for pkg in "${background_pkgs[@]}"; do
+        if echo "$installed_pkgs" | grep -q "^package:app.revanced.android.gms$"; then
 
-            if echo "$installed_pkgs" | grep -q "^package:$pkg$"; then
+            pkg="app.revanced.android.gms"
 
-                echo "     → $pkg"
+            echo "     → $pkg"
 
-                ADB_CMD shell cmd appops set --user "$user" "$pkg" RUN_IN_BACKGROUND allow >/dev/null 2>&1 || true
-                ADB_CMD shell cmd appops set --user "$user" "$pkg" RUN_ANY_IN_BACKGROUND allow >/dev/null 2>&1 || true
-                ADB_CMD shell cmd appops set --user "$user" "$pkg" WAKE_LOCK allow >/dev/null 2>&1 || true
+            # Runtime Permissions
+            for perm in \
+                android.permission.ACCESS_FINE_LOCATION \
+                android.permission.ACCESS_COARSE_LOCATION \
+                android.permission.ACCESS_BACKGROUND_LOCATION \
+                android.permission.READ_PHONE_STATE \
+                android.permission.GET_ACCOUNTS \
+                android.permission.READ_CONTACTS \
+                android.permission.CAMERA \
+                android.permission.BODY_SENSORS \
+                android.permission.RECEIVE_SMS \
+                android.permission.READ_EXTERNAL_STORAGE \
+                android.permission.WRITE_EXTERNAL_STORAGE \
+                android.permission.BLUETOOTH_CONNECT \
+                android.permission.BLUETOOTH_SCAN \
+                android.permission.BLUETOOTH_ADVERTISE \
+                android.permission.POST_NOTIFICATIONS
+            do
+                ADB_CMD shell pm grant --user "$user" "$pkg" "$perm" >/dev/null 2>&1 || true
+            done
 
-                ADB_CMD shell dumpsys deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
-                ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
+            # AppOps
+            for op in \
+                ACCESS_FINE_LOCATION \
+                ACCESS_COARSE_LOCATION \
+                ACCESS_BACKGROUND_LOCATION \
+                RUN_IN_BACKGROUND \
+                RUN_ANY_IN_BACKGROUND \
+                WAKE_LOCK \
+                BLUETOOTH_CONNECT \
+                POST_NOTIFICATION
+            do
+                ADB_CMD shell cmd appops set --user "$user" "$pkg" "$op" allow >/dev/null 2>&1 || true
+            done
 
-                echo "       ✓ Background Permissions Applied"
+            # Disable Auto Revoke (if supported)
+            ADB_CMD shell cmd appops set --user "$user" "$pkg" AUTO_REVOKE_PERMISSIONS_IF_UNUSED ignore >/dev/null 2>&1 || true
+            ADB_CMD shell cmd appops set --user "$user" "$pkg" AUTO_REVOKE_MANAGED_BY_INSTALLER allow >/dev/null 2>&1 || true
 
-            else
-                echo "     → $pkg (not installed)"
-            fi
+            # Battery Optimization
+            ADB_CMD shell dumpsys deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
+            ADB_CMD shell cmd deviceidle whitelist +"$pkg" >/dev/null 2>&1 || true
 
-        done
+            echo "       ✓ microG Permissions Applied"
+
+        else
+            echo "     → app.revanced.android.gms (not installed)"
+        fi
 
     done
 }
@@ -756,10 +786,10 @@ LYNK() {
   echo "👥 Users: ${USERS[*]}"
 
   USE_ALL_USERS=true
-  install_apks_in_folder "$DESKTOP_APK/LYNK"
+  # install_apks_in_folder "$DESKTOP_APK/LYNK"
   USE_ALL_USERS=false
 
-  install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
+  # install_from_subfolders "$DESKTOP_APK/LYNK" "LYNK"
 
   set_permissions
 
