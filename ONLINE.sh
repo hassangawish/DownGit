@@ -572,7 +572,7 @@ Rox-Unlock() {
     echo
 
     echo "[2/6] Clearing Geofence Lock..."
-    ADB_CMD -d shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
+    ADB_CMD shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
     sleep 1
 
     echo "[3/6] Verifying Lock Status..."
@@ -586,26 +586,41 @@ Rox-Unlock() {
     for user in "${USERS[@]}"; do
         echo "   → User $user"
 
-        ADB_CMD -d shell pm clear --user 0 com.roxmotor.sceneeditapp
-        ADB_CMD -d shell pm disable-user --user 0 com.roxmotor.sceneeditapp
+        ADB_CMD shell pm clear --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
 
         echo "      ✓ Done"
     done
-    echo "[5/6] Gettings Disabled Packages..."
 
-    ADB_CMD -d shell pm list packages -d
     echo
+    echo "[5/6] Getting Disabled Packages..."
+    ADB_CMD shell pm list packages -d
+    echo
+
     echo "[6/6] Rebooting device..."
     sleep 1
     ADB_CMD reboot
 
     wait_for_adb
- 
-    echo "[1/5] Current Lock Status:"
-    ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
+
     echo
-
-
+    echo "======================================"
+    echo "      Current Lock Status"
+    echo "======================================"
+    
+    STATUS=$(ADB_CMD shell getprop vnrpst.engineermode.geofenceLock | tr -d '\r')
+    echo "$STATUS"
+    echo
+    if echo "$STATUS" | grep -q '"geofenceLock_state":0' && \
+       echo "$STATUS" | grep -q '"geofenceLock_time":0'; then
+        echo "======================================"
+        echo "✓ Success"
+        echo "======================================"
+    else
+        echo "======================================"
+        echo "✗ Failed, Please Retry"
+        echo "======================================"
+    fi
     disconnect_if_wireless
 }
 
