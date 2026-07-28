@@ -567,19 +567,19 @@ Rox-Unlock() {
     echo "======================================"
     echo
 
-    echo "[1/5] Current Lock Status:"
+    echo "[1/6] Current Lock Status:"
     ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
     echo
 
-    echo "[2/5] Clearing Geofence Lock..."
+    echo "[2/6] Clearing Geofence Lock..."
     ADB_CMD -d shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
     sleep 1
 
-    echo "[3/5] Verifying Lock Status..."
+    echo "[3/6] Verifying Lock Status..."
     ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
     echo
 
-    echo "[4/5] Clearing SceneEditApp data for all users..."
+    echo "[4/6] Clearing SceneEditApp data for all users..."
 
     USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2))
 
