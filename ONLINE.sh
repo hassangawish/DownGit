@@ -558,16 +558,46 @@ ROX() {
 }
 
 Rox-Unlock() {
-  clear
-  select_device || { echo "Returning to main menu..."; return; }
-  wait_for_adb
-  echo "Unlocking Screen (rox)"
-  ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
-  ADB_CMD shell setprop vnrpst.engineermode.geofenceLock '{"geofenceLock_state":0,"geofenceLock_time":0}'
-  ADB_CMD shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
-  ADB_CMD shell pm disable-user --user 0 com.roxmotor.sceneeditapp
-  ADB_CMD reboot
-  disconnect_if_wireless
+    clear
+    select_device || { echo "Returning to main menu..."; return; }
+    wait_for_adb
+
+    echo "======================================"
+    echo "      ROX Screen Unlock Utility"
+    echo "======================================"
+    echo
+
+    echo "[1/5] Current Lock Status:"
+    ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
+    echo
+
+    echo "[2/5] Clearing Geofence Lock..."
+    ADB_CMD shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
+    sleep 1
+
+    echo "[3/5] Verifying Lock Status..."
+    ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
+    echo
+
+    echo "[4/5] Clearing SceneEditApp data for all users..."
+
+    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2))
+
+    for user in "${USERS[@]}"; do
+        echo "   → User $user"
+
+        ADB_CMD shell pm clear --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+
+        echo "      ✓ Done"
+    done
+
+    echo
+    echo "[5/5] Rebooting device..."
+    sleep 1
+    ADB_CMD reboot
+
+    disconnect_if_wireless
 }
 
 zeekr() {
