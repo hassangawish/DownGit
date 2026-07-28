@@ -591,9 +591,11 @@ Rox-Unlock() {
 
         echo "      ✓ Done"
     done
+    echo "[5/6] Gettings Disabled Packages..."
 
+    ADB_CMD -d shell pm list packages -d
     echo
-    echo "[5/5] Rebooting device..."
+    echo "[6/6] Rebooting device..."
     sleep 1
     ADB_CMD reboot
 
