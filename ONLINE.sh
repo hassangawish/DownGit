@@ -597,6 +597,13 @@ Rox-Unlock() {
     sleep 1
     ADB_CMD reboot
 
+    wait_for_adb
+ 
+    echo "[1/5] Current Lock Status:"
+    ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
+    echo
+
+
     disconnect_if_wireless
 }
 
