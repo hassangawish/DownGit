@@ -572,7 +572,7 @@ Rox-Unlock() {
     echo
 
     echo "[2/5] Clearing Geofence Lock..."
-    ADB_CMD shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
+    ADB_CMD -d shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
     sleep 1
 
     echo "[3/5] Verifying Lock Status..."
@@ -586,8 +586,8 @@ Rox-Unlock() {
     for user in "${USERS[@]}"; do
         echo "   → User $user"
 
-        ADB_CMD shell pm clear --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
-        ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD -d shell pm clear --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD -d shell pm disable-user --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
 
         echo "      ✓ Done"
     done
