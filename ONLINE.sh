@@ -1000,7 +1000,7 @@ AVATR() {
     select_device || { echo "Returning to main menu..."; return; }
     wait_for_adb
 
-    echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
+    echo "🚀 Installing Apps on AVATR 11"
 
     USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
 
@@ -1012,12 +1012,9 @@ AVATR() {
         USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
     fi
 
-    if [[ ${#USERS[@]} -eq 0 ]]; then
-        USERS=(0)
-        echo "⚠️ Could not detect users, using User 0."
-    fi
+    [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
 
-    echo "👥 Found Users: ${USERS[*]}"
+    echo "👥 Users: ${USERS[*]}"
 
     ############################################################
     # Disable Package Installer
@@ -1033,35 +1030,88 @@ AVATR() {
     # Install Normal APKs
     ############################################################
 
-    for apk in AVATR/*.apk; do
+    for apk in "$DESKTOP_APK/AVATR"/*.apk; do
         [[ -f "$apk" ]] || continue
 
         echo "📦 Installing: $(basename "$apk")"
 
         for user in "${USERS[@]}"; do
-            ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || \
-            ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || true
+
+            output=$(ADB_CMD install -r -d -g \
+                --user "$user" \
+                -i com.huawei.appmarket.vehicle \
+                "$apk" 2>&1)
+
+            if echo "$output" | grep -q "Success"; then
+                printf "   👤 User %-3s ✅ Installed\n" "$user"
+                continue
+            fi
+
+            output=$(ADB_CMD install -r -d -g \
+                --user "$user" \
+                -i com.huawei.appinstaller.car \
+                "$apk" 2>&1)
+
+            if echo "$output" | grep -q "Success"; then
+                printf "   👤 User %-3s ✅ Installed (Car Installer)\n" "$user"
+            else
+                printf "   👤 User %-3s ❌ Failed\n" "$user"
+                echo "$output"
+            fi
+
         done
     done
 
     ############################################################
-    # Install Split APKs
+    # Install ALL Split APK folders Automatically
     ############################################################
 
-    for user in "${USERS[@]}"; do
-        if compgen -G "$DESKTOP_APK/AVATR/Ayah/*.apk" > /dev/null; then
-            echo "📦 Installing Ayah (User $user)..."
-            ADB_CMD install-multiple -r -d -g --user "$user" \
-                -i com.huawei.appmarket.vehicle \
-                "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
-        fi
+    echo ""
+    echo "📂 Installing Split APK folders..."
 
-        if compgen -G "$DESKTOP_APK/AVATR/Downloader/*.apk" > /dev/null; then
-            echo "📦 Installing Downloader (User $user)..."
-            ADB_CMD install-multiple -r -d -g --user "$user" \
+    for folder in "$DESKTOP_APK/AVATR"/*/; do
+
+        [[ -d "$folder" ]] || continue
+
+        name=$(basename "$folder")
+
+        echo ""
+        echo "📦 $name"
+
+        shopt -s nullglob
+        files=("$folder"/*.apk)
+        shopt -u nullglob
+
+        [[ ${#files[@]} -eq 0 ]] && continue
+
+        for user in "${USERS[@]}"; do
+
+            output=$(ADB_CMD install-multiple \
+                -r -d -g \
+                --user "$user" \
+                -i com.huawei.appmarket.vehicle \
+                "${files[@]}" 2>&1)
+
+            if echo "$output" | grep -q "Success"; then
+                printf "   👤 User %-3s ✅ Installed\n" "$user"
+                continue
+            fi
+
+            output=$(ADB_CMD install-multiple \
+                -r -d -g \
+                --user "$user" \
                 -i com.huawei.appinstaller.car \
-                "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
-        fi
+                "${files[@]}" 2>&1)
+
+            if echo "$output" | grep -q "Success"; then
+                printf "   👤 User %-3s ✅ Installed (Car Installer)\n" "$user"
+            else
+                printf "   👤 User %-3s ❌ Failed\n" "$user"
+                echo "$output"
+            fi
+
+        done
+
     done
 
     ############################################################
@@ -1078,6 +1128,7 @@ AVATR() {
         ADB_CMD shell pm enable --user "$user" com.android.packageinstaller >/dev/null 2>&1 || true
     done
 
+    echo ""
     echo "🎉 AVATR Installation Completed!"
 
     disconnect_if_wireless
