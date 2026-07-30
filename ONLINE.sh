@@ -1128,6 +1128,23 @@ AVATR() {
         ADB_CMD shell pm enable --user "$user" com.android.packageinstaller >/dev/null 2>&1 || true
     done
 
+    ############################################################
+    # Set Chrome as Default Browser
+    ############################################################
+
+    echo ""
+    echo "🌐 Setting Chrome as Default Browser..."
+
+    for user in "${USERS[@]}"; do
+
+        if ADB_CMD shell cmd role add-role-holder --user "$user" android.app.role.BROWSER com.android.chrome >/dev/null 2>&1; then
+            printf "   👤 User %-3s ✅ Chrome set as default browser\n" "$user"
+        else
+            printf "   👤 User %-3s ⚠️ Unable to set default browser\n" "$user"
+        fi
+
+    done
+    
     echo ""
     echo "🎉 AVATR Installation Completed!"
 
