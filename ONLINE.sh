@@ -1012,11 +1012,17 @@ AVATR() {
         USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
     fi
 
-    [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+    if [[ ${#USERS[@]} -eq 0 ]]; then
+        USERS=(0)
+        echo "⚠️ Could not detect users, using User 0."
+    fi
 
     echo "👥 Found Users: ${USERS[*]}"
 
+    ############################################################
     # Disable Package Installer
+    ############################################################
+
     for user in "${USERS[@]}"; do
         ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller >/dev/null 2>&1 || true
     done
@@ -1024,55 +1030,39 @@ AVATR() {
     sleep 2
 
     ############################################################
-    # Install normal APKs
+    # Install Normal APKs
     ############################################################
 
-    for apk in "$DESKTOP_APK/AVATR"/*.apk; do
+    for apk in AVATR/*.apk; do
         [[ -f "$apk" ]] || continue
 
         echo "📦 Installing: $(basename "$apk")"
 
         for user in "${USERS[@]}"; do
-            ADB_CMD install -r -d -g \
-                --user "$user" \
-                -i com.huawei.appmarket.vehicle \
-                "$apk" || \
-            ADB_CMD install -r -d -g \
-                --user "$user" \
-                -i com.huawei.appinstaller.car \
-                "$apk" || true
+            ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || \
+            ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || true
         done
     done
 
     ############################################################
-    # Ayah
+    # Install Split APKs
     ############################################################
 
-    if compgen -G "$DESKTOP_APK/AVATR/Ayah/*.apk" > /dev/null; then
-        echo "📦 Installing Ayah..."
-
-        for user in "${USERS[@]}"; do
-            ADB_CMD install-multiple -r -d -g \
-                --user "$user" \
+    for user in "${USERS[@]}"; do
+        if compgen -G "$DESKTOP_APK/AVATR/Ayah/*.apk" > /dev/null; then
+            echo "📦 Installing Ayah (User $user)..."
+            ADB_CMD install-multiple -r -d -g --user "$user" \
                 -i com.huawei.appmarket.vehicle \
                 "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
-        done
-    fi
+        fi
 
-    ############################################################
-    # Downloader
-    ############################################################
-
-    if compgen -G "$DESKTOP_APK/AVATR/Downloader/*.apk" > /dev/null; then
-        echo "📦 Installing Downloader..."
-
-        for user in "${USERS[@]}"; do
-            ADB_CMD install-multiple -r -d -g \
-                --user "$user" \
+        if compgen -G "$DESKTOP_APK/AVATR/Downloader/*.apk" > /dev/null; then
+            echo "📦 Installing Downloader (User $user)..."
+            ADB_CMD install-multiple -r -d -g --user "$user" \
                 -i com.huawei.appinstaller.car \
                 "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
-        done
-    fi
+        fi
+    done
 
     ############################################################
     # Permissions
@@ -1081,7 +1071,7 @@ AVATR() {
     set_permissions
 
     ############################################################
-    # Enable Package Installer
+    # Re-enable Package Installer
     ############################################################
 
     for user in "${USERS[@]}"; do
