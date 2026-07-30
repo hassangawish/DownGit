@@ -607,7 +607,7 @@ Rox-Unlock() {
     echo "======================================"
     echo "      Current Lock Status"
     echo "======================================"
-    
+
     STATUS=$(ADB_CMD shell getprop vnrpst.engineermode.geofenceLock | tr -d '\r')
     echo "$STATUS"
     echo
@@ -996,64 +996,101 @@ BYD_OLD() {
 }
 
 AVATR() {
-  clear
-  select_device
-  wait_for_adb
+    clear
+    select_device || { echo "Returning to main menu..."; return; }
+    wait_for_adb
 
-  echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
+    echo "🚀 Installing Apps on AVATR 11 (Fixed Method)"
 
-  USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
 
-  if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
-  fi
+    if [[ ${#USERS[@]} -eq 0 ]]; then
+        USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+    fi
 
-  if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
-  fi
+    if [[ ${#USERS[@]} -eq 0 ]]; then
+        USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+    fi
 
-  if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=(0)
-    echo "⚠️ Could not detect users, using User 0."
-  fi
+    [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
 
-  echo "👥 Found Users: ${USERS[*]}"
+    echo "👥 Found Users: ${USERS[*]}"
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller 2>/dev/null || true
-  done
+    # Disable Package Installer
+    for user in "${USERS[@]}"; do
+        ADB_CMD shell pm disable-user --user "$user" com.android.packageinstaller >/dev/null 2>&1 || true
+    done
 
-  sleep 2
+    sleep 2
 
-  setopt nullglob
+    ############################################################
+    # Install normal APKs
+    ############################################################
 
-  for apk in AVATR/*.apk; do
-    [[ -e "$apk" ]] || continue
+    for apk in "$DESKTOP_APK/AVATR"/*.apk; do
+        [[ -f "$apk" ]] || continue
 
-    echo "   → $(basename "$apk")"
+        echo "📦 Installing: $(basename "$apk")"
+
+        for user in "${USERS[@]}"; do
+            ADB_CMD install -r -d -g \
+                --user "$user" \
+                -i com.huawei.appmarket.vehicle \
+                "$apk" || \
+            ADB_CMD install -r -d -g \
+                --user "$user" \
+                -i com.huawei.appinstaller.car \
+                "$apk" || true
+        done
+    done
+
+    ############################################################
+    # Ayah
+    ############################################################
+
+    if compgen -G "$DESKTOP_APK/AVATR/Ayah/*.apk" > /dev/null; then
+        echo "📦 Installing Ayah..."
+
+        for user in "${USERS[@]}"; do
+            ADB_CMD install-multiple -r -d -g \
+                --user "$user" \
+                -i com.huawei.appmarket.vehicle \
+                "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
+        done
+    fi
+
+    ############################################################
+    # Downloader
+    ############################################################
+
+    if compgen -G "$DESKTOP_APK/AVATR/Downloader/*.apk" > /dev/null; then
+        echo "📦 Installing Downloader..."
+
+        for user in "${USERS[@]}"; do
+            ADB_CMD install-multiple -r -d -g \
+                --user "$user" \
+                -i com.huawei.appinstaller.car \
+                "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
+        done
+    fi
+
+    ############################################################
+    # Permissions
+    ############################################################
+
+    set_permissions
+
+    ############################################################
+    # Enable Package Installer
+    ############################################################
 
     for user in "${USERS[@]}"; do
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$apk" || \
-      ADB_CMD install -r -d -g --user "$user" -i com.huawei.appinstaller.car "$apk" || true
+        ADB_CMD shell pm enable --user "$user" com.android.packageinstaller >/dev/null 2>&1 || true
     done
-  done
 
-  unsetopt nullglob
+    echo "🎉 AVATR Installation Completed!"
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appmarket.vehicle "$DESKTOP_APK/AVATR/Ayah"/*.apk || true
-    ADB_CMD install-multiple -r -d -g --user "$user" -i com.huawei.appinstaller.car "$DESKTOP_APK/AVATR/Downloader"/*.apk || true
-  done
-
-  set_permissions
-
-  for user in "${USERS[@]}"; do
-    ADB_CMD shell pm enable --user "$user" com.android.packageinstaller 2>/dev/null || true
-  done
-
-  echo "🎉 AVATR Installation Completed!"
-
-  disconnect_if_wireless
+    disconnect_if_wireless
 }
 
 VOYAH() {
