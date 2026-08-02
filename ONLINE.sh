@@ -424,7 +424,8 @@ set_permissions() {
                 android.permission.BLUETOOTH_CONNECT \
                 android.permission.BLUETOOTH_SCAN \
                 android.permission.BLUETOOTH_ADVERTISE \
-                android.permission.POST_NOTIFICATIONS
+                android.permission.POST_NOTIFICATIONS \
+                android.permission.SYSTEM_ALERT_WINDOW
             do
                 ADB_CMD shell pm grant --user "$user" "$pkg" "$perm" >/dev/null 2>&1 || true
             done
@@ -438,7 +439,8 @@ set_permissions() {
                 RUN_ANY_IN_BACKGROUND \
                 WAKE_LOCK \
                 BLUETOOTH_CONNECT \
-                POST_NOTIFICATION
+                POST_NOTIFICATION \
+                SYSTEM_ALERT_WINDOW
             do
                 ADB_CMD shell cmd appops set --user "$user" "$pkg" "$op" allow >/dev/null 2>&1 || true
             done
