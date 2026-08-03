@@ -15,7 +15,7 @@ fi
 clear
 
 # Resize Terminal to 65 columns × 30 rows
-printf '\e[8;30;63t'
+printf '\e[8;30;64t'
 
 set +e
 
@@ -111,8 +111,11 @@ install_apk_safe() {
     echo "📦 Installing: $(basename "$apk")"
 
     pkg=$(get_package_name "$apk")
+    echo "   📦 Package: [$pkg]"
 
-    # ===== Install for ALL Users =====
+    # ============================================================
+    # Install for ALL Users
+    # ============================================================
     if [[ "$USE_ALL_USERS" == true ]]; then
 
         for user in $(get_all_users); do
@@ -125,16 +128,30 @@ install_apk_safe() {
                 continue
             fi
 
-            # Try install-existing for clone users or already-installed packages
-            if [[ -n "$pkg" ]]; then
+            # Clone user → try install-existing
+            if echo "$output" | grep -qi "geely can't only install on clone user"; then
 
-                ADB_CMD shell cmd package install-existing --user "$user" "$pkg" >/dev/null 2>&1
+                printf "   👤 User %-3s 🔄 Clone User Detected\n" "$user"
 
-                if ADB_CMD shell pm list packages --user "$user" | grep -q "^package:$pkg$"; then
-                    printf "   👤 User %-3s ✅ Linked\n" "$user"
+                if [[ -z "$pkg" ]]; then
+                    echo "      ❌ Package name not detected."
                     continue
                 fi
 
+                echo "      ➜ Running:"
+                echo "         cmd package install-existing --user $user $pkg"
+
+                link_output=$(ADB_CMD shell cmd package install-existing --user "$user" "$pkg" 2>&1)
+
+                echo "$link_output"
+
+                if ADB_CMD shell pm list packages --user "$user" | grep -q "^package:$pkg$"; then
+                    printf "   👤 User %-3s ✅ Linked\n" "$user"
+                else
+                    printf "   👤 User %-3s ❌ Link Failed\n" "$user"
+                fi
+
+                continue
             fi
 
             # Signature mismatch
@@ -149,7 +166,7 @@ install_apk_safe() {
                 continue
             fi
 
-            # Unknown failure
+            # Other errors
             printf "   👤 User %-3s ❌ Failed\n" "$user"
             echo "$output"
 
@@ -158,7 +175,9 @@ install_apk_safe() {
         return
     fi
 
-    # ===== Normal Install =====
+    # ============================================================
+    # Normal Install
+    # ============================================================
     output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
 
     if echo "$output" | grep -q "Success"; then
@@ -166,7 +185,6 @@ install_apk_safe() {
         return
     fi
 
-    # Signature / Downgrade conflict
     if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
 
         echo "🔄 Existing version detected..."
