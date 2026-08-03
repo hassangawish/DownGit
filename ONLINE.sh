@@ -15,7 +15,7 @@ fi
 clear
 
 # Resize Terminal to 65 columns × 30 rows
-printf '\e[8;30;65t'
+printf '\e[8;30;64t'
 
 set +e
 
@@ -40,9 +40,30 @@ export SKIP_JDK_VERSION_CHECK=true
 
 USE_ALL_USERS=false
 
+# get_package_name() {
+#   local apk="$1"
+#   aapt dump badging "$apk" 2>/dev/null | grep "package: name=" | awk -F"'" '{print $2}'
+# }
+
 get_package_name() {
-  local apk="$1"
-  aapt dump badging "$apk" 2>/dev/null | grep "package: name=" | awk -F"'" '{print $2}'
+    local apk="$1"
+
+    if command -v apkanalyzer >/dev/null 2>&1; then
+        apkanalyzer manifest application-id "$apk" 2>/dev/null | tr -d '\r\n'
+        return
+    fi
+
+    if command -v aapt >/dev/null 2>&1; then
+        aapt dump badging "$apk" 2>/dev/null | awk -F"'" '/package: name=/{print $2; exit}'
+        return
+    fi
+
+    if command -v aapt2 >/dev/null 2>&1; then
+        aapt2 dump packagename "$apk" 2>/dev/null | tr -d '\r\n'
+        return
+    fi
+
+    echo ""
 }
 
 get_all_users() {
