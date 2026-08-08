@@ -15,7 +15,7 @@ fi
 clear
 
 # Resize Terminal to 65 columns × 30 rows
-printf '\e[8;30;65t'
+printf '\e[8;30;64t'
 
 set +e
 
@@ -123,116 +123,6 @@ wait_for_adb() {
   echo "⏳ Waiting for device..."
   $ADB -s "$TARGET_DEVICE" wait-for-device || true
 }
-
-# install_apk_safe() {
-#     local apk="$1"
-#     local pkg=""
-#     local output=""
-
-#     echo "📦 Installing: $(basename "$apk")"
-
-#     pkg=$(get_package_name "$apk")
-#     echo "   📦 Package: [$pkg]"
-
-#     # ============================================================
-#     # Install for ALL Users
-#     # ============================================================
-#     if [[ "$USE_ALL_USERS" == true ]]; then
-
-#         for user in $(get_all_users); do
-
-#             output=$(ADB_CMD install -r -d -g --user "$user" "$apk" 2>&1)
-
-#             # Installed normally
-#             if echo "$output" | grep -q "Success"; then
-#                 printf "   👤 User %-3s ✅ Installed\n" "$user"
-#                 continue
-#             fi
-
-#             # Clone user → try install-existing
-#             if echo "$output" | grep -qi "geely can't only install on clone user"; then
-
-#                 printf "   👤 User %-3s 🔄 Clone User Detected\n" "$user"
-
-#                 if [[ -z "$pkg" ]]; then
-#                     echo "      ❌ Package name not detected."
-#                     continue
-#                 fi
-
-#                 echo "      ➜ Running:"
-#                 echo "         cmd package install-existing --user $user $pkg"
-
-#                 link_output=$(ADB_CMD shell cmd package install-existing --user "$user" "$pkg" 2>&1)
-
-#                 echo "$link_output"
-
-#                 if ADB_CMD shell pm list packages --user "$user" | grep -q "^package:$pkg$"; then
-#                     printf "   👤 User %-3s ✅ Linked\n" "$user"
-#                 else
-#                     printf "   👤 User %-3s ❌ Link Failed\n" "$user"
-#                 fi
-
-#                 continue
-#             fi
-
-#             # Signature mismatch
-#             if echo "$output" | grep -q "INSTALL_FAILED_UPDATE_INCOMPATIBLE"; then
-#                 printf "   👤 User %-3s ⚠️ Signature Mismatch\n" "$user"
-#                 continue
-#             fi
-
-#             # Version downgrade
-#             if echo "$output" | grep -q "INSTALL_FAILED_VERSION_DOWNGRADE"; then
-#                 printf "   👤 User %-3s ⚠️ Version Downgrade\n" "$user"
-#                 continue
-#             fi
-
-#             # Other errors
-#             printf "   👤 User %-3s ❌ Failed\n" "$user"
-#             echo "$output"
-
-#         done
-
-#         return
-#     fi
-
-#     # ============================================================
-#     # Normal Install
-#     # ============================================================
-#     output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#     if echo "$output" | grep -q "Success"; then
-#         echo "   ✅ Installed"
-#         return
-#     fi
-
-#     if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
-
-#         echo "🔄 Existing version detected..."
-
-#         if [[ -n "$pkg" ]]; then
-
-#             for user in $(get_all_users); do
-#                 ADB_CMD shell pm uninstall --user "$user" "$pkg" >/dev/null 2>&1 || true
-#             done
-
-#             output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#             if echo "$output" | grep -q "Success"; then
-#                 echo "   ✅ Reinstalled"
-#             else
-#                 echo "   ❌ Failed"
-#                 echo "$output"
-#             fi
-
-#         else
-#             echo "❌ Couldn't detect package name."
-#         fi
-
-#     else
-#         echo "$output"
-#     fi
-# }
 
 install_apk_safe() {
     local apk="$1"
@@ -1152,6 +1042,7 @@ Premissions() {
 
   echo "Step 5: Post-reboot cleanup..."
   ADB_CMD shell pm clear ecarx.notificationcenterui 2>/dev/null || true
+  ADB_CMD shell pm disable-user ecarx.notificationcenterui 2>/dev/null || true
   ADB_CMD shell settings put system system_locales en 2>/dev/null || true
   ADB_CMD shell pm uninstall --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
   ADB_CMD shell pm clear --user 0 com.zeekr.carlauncher3d 2>/dev/null || true
