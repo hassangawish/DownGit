@@ -672,8 +672,11 @@ ROX() {
     ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Downloader"/*.apk || true
   done
 
-  for user in "${USERS[@]}"; do
+  for user in $(ADB_CMD shell pm list users | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2); do
+    echo "Restarting Launcher for user $user..."
     ADB_CMD shell am start --user "$user" -n com.roxmotor.nonpreinstallapp/com.roxmotor.nonpreinstallapp.MainActivity2 || true
+    ADB_CMD shell am force-stop --user "$user" qa.essa.elauncher
+    ADB_CMD shell am start --user "$user" -n qa.essa.elauncher/.MainActivity
   done
 
   set_permissions
@@ -944,7 +947,11 @@ G700() {
 
   set_permissions
 
-  ADB_CMD shell am start -n qa.essa.elauncher/.MainActivity
+  for user in $(ADB_CMD shell pm list users | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2); do
+    echo "Restarting eLauncher for user $user..."
+    ADB_CMD shell am force-stop --user "$user" qa.essa.elauncher
+    ADB_CMD shell am start --user "$user" -n qa.essa.elauncher/.MainActivity
+  done
 
   echo "✅ Installed Successfully"
   disconnect_if_wireless
