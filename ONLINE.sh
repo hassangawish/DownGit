@@ -1049,7 +1049,7 @@ Premissions() {
 
   echo "Step 5: Post-reboot cleanup..."
   ADB_CMD shell pm clear ecarx.notificationcenterui 2>/dev/null || true
-  ADB_CMD shell pm disable-user ecarx.notificationcenterui 2>/dev/null || true
+  # ADB_CMD shell pm disable-user ecarx.notificationcenterui 2>/dev/null || true
   ADB_CMD shell settings put system system_locales en 2>/dev/null || true
   ADB_CMD shell pm uninstall --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
   ADB_CMD shell pm clear --user 0 com.zeekr.carlauncher3d 2>/dev/null || true
