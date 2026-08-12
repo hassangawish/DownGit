@@ -923,38 +923,632 @@ EOF
   disconnect_if_wireless
 }
 
-G700() {
-  clear
-  select_device || { echo "Returning to main menu..."; return; }
-  wait_for_adb
-  echo "🚀 Installing Apps on G700"
+# ============================================================
+# G700 ONLINE CODE GENERATOR
+# ============================================================
 
-  USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+G700_GENERATE_CODE() {
+
+    clear
+
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                🔐 G700 ONLINE CODE GENERATOR                 ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║       Fetch the latest codes directly from the website.      ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    echo "Software Version:"
+    echo
+    echo "1. 00.03.36 (Newest)"
+    echo "2. Below 00.03.36"
+    echo "3. Back"
+    echo
+
+    read -r -p "Select version [1-3]: " G700_VERSION
+
+    case "$G700_VERSION" in
+
+        # ====================================================
+        # 00.03.36
+        # ====================================================
+
+        1)
+
+            clear
+
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║                🔐 G700 ONLINE CODE GENERATOR                 ║"
+            echo "╠══════════════════════════════════════════════════════════════╣"
+            echo "║              Software Version: 00.03.36                      ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo
+
+            G700_URL="https://essa.qa/elauncher/g700.php"
+
+            echo "🌐 Connecting to G700 online generator..."
+            echo
+
+            # ------------------------------------------------
+            # Check curl
+            # ------------------------------------------------
+
+            if ! command -v curl >/dev/null 2>&1; then
+
+                echo "✗ curl is not installed."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            # ------------------------------------------------
+            # Check perl
+            # ------------------------------------------------
+
+            if ! command -v perl >/dev/null 2>&1; then
+
+                echo "✗ Perl is not installed."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            # ------------------------------------------------
+            # Download page
+            # ------------------------------------------------
+
+            G700_PAGE="$(
+                curl \
+                    -L \
+                    --fail \
+                    --silent \
+                    --show-error \
+                    --connect-timeout 10 \
+                    --max-time 30 \
+                    -A "Mozilla/5.0" \
+                    "$G700_URL" \
+                    2>/dev/null
+            )"
+
+            if [ -z "$G700_PAGE" ]; then
+
+                echo
+                echo "✗ Unable to connect to the G700 website."
+                echo
+                echo "Please check your internet connection."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            echo "✓ Connected successfully."
+            echo
+
+            # ------------------------------------------------
+            # Convert HTML to plain text
+            # ------------------------------------------------
+
+            G700_TEXT="$(
+                printf '%s\n' "$G700_PAGE" |
+                sed 's/<[^>]*>/ /g' |
+                sed \
+                    -e 's/&nbsp;/ /g' \
+                    -e 's/&amp;/\&/g' |
+                tr -s '[:space:]' ' '
+            )"
+
+            # ------------------------------------------------
+            # Extract Option A - Quick Code
+            #
+            # Expected website text:
+            #
+            # Option A — Quick code
+            # ...
+            # 00.03.36 (newest) 442348
+            # Below 00.03.36 936348
+            #
+            # We extract BOTH values independently.
+            # ------------------------------------------------
+
+            G700_NEW_CODE="$(
+                printf '%s' "$G700_TEXT" |
+                perl -ne '
+                    if (
+                        /Option\s+A\s*[—-]\s*Quick\s+code.*?
+                         00\.03\.36\s*\(newest\)\s+(\d{6})/ix
+                    ) {
+                        print $1;
+                        exit;
+                    }
+                '
+            )"
+
+            G700_OLD_CODE="$(
+                printf '%s' "$G700_TEXT" |
+                perl -ne '
+                    if (
+                        /Option\s+A\s*[—-]\s*Quick\s+code.*?
+                         Below\s+00\.03\.36\s+(\d{6})/ix
+                    ) {
+                        print $1;
+                        exit;
+                    }
+                '
+            )"
+
+            # ------------------------------------------------
+            # Fallback extraction
+            #
+            # This is deliberately independent for each
+            # software version.
+            # ------------------------------------------------
+
+            if ! [[ "$G700_NEW_CODE" =~ ^[0-9]{6}$ ]]; then
+
+                G700_NEW_CODE="$(
+                    printf '%s' "$G700_TEXT" |
+                    perl -ne '
+                        if (
+                            /00\.03\.36\s*\(newest\)\s+(\d{6})/i
+                        ) {
+                            print $1;
+                            exit;
+                        }
+                    '
+                )"
+
+            fi
+
+            if ! [[ "$G700_OLD_CODE" =~ ^[0-9]{6}$ ]]; then
+
+                G700_OLD_CODE="$(
+                    printf '%s' "$G700_TEXT" |
+                    perl -ne '
+                        if (
+                            /Below\s+00\.03\.36\s+(\d{6})/i
+                        ) {
+                            print $1;
+                            exit;
+                        }
+                    '
+                )"
+
+            fi
+
+            # ------------------------------------------------
+            # Validate NEW code
+            # ------------------------------------------------
+
+            if ! [[ "$G700_NEW_CODE" =~ ^[0-9]{6}$ ]]; then
+
+                echo
+                echo "✗ Could not retrieve the 00.03.36 code."
+                echo
+                echo "The website format may have changed."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            # ------------------------------------------------
+            # Display NEW version
+            # ------------------------------------------------
+
+            echo
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║                    ✓ CODE RETRIEVED                          ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo
+
+            echo "Software Version: 00.03.36"
+            echo "Source: G700 Online Generator"
+            echo
+
+            echo "┌──────────────────────────────────────────────────────────────┐"
+            echo "│                 📞 CONNECTION CODE                           │"
+            echo "├──────────────────────────────────────────────────────────────┤"
+            echo "│                                                              │"
+            printf "│                    *#%s#*                                │\n" "$G700_NEW_CODE"
+            echo "│                                                              │"
+            echo "└──────────────────────────────────────────────────────────────┘"
+            echo
+
+            echo "┌──────────────────────────────────────────────────────────────┐"
+            echo "│                 🔐 DAILY PASSWORD                            │"
+            echo "├──────────────────────────────────────────────────────────────┤"
+            echo "│                                                              │"
+            printf "│                       %s                                 │\n" "$G700_NEW_CODE"
+            echo "│                                                              │"
+            echo "└──────────────────────────────────────────────────────────────┘"
+            echo
+
+            echo "=============================================================="
+            echo
+
+            read -r -p "Press ENTER to return..."
+            return
+            ;;
+
+
+        # ====================================================
+        # BELOW 00.03.36
+        # ====================================================
+
+        2)
+
+            clear
+
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║                🔐 G700 ONLINE CODE GENERATOR                 ║"
+            echo "╠══════════════════════════════════════════════════════════════╣"
+            echo "║                  Software: Below 00.03.36                    ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo
+
+            G700_URL="https://essa.qa/elauncher/g700.php"
+
+            echo "🌐 Connecting to G700 online generator..."
+            echo
+
+            # ------------------------------------------------
+            # Check curl
+            # ------------------------------------------------
+
+            if ! command -v curl >/dev/null 2>&1; then
+
+                echo "✗ curl is not installed."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            # ------------------------------------------------
+            # Check perl
+            # ------------------------------------------------
+
+            if ! command -v perl >/dev/null 2>&1; then
+
+                echo "✗ Perl is not installed."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            # ------------------------------------------------
+            # Download page
+            # ------------------------------------------------
+
+            G700_PAGE="$(
+                curl \
+                    -L \
+                    --fail \
+                    --silent \
+                    --show-error \
+                    --connect-timeout 10 \
+                    --max-time 30 \
+                    -A "Mozilla/5.0" \
+                    "$G700_URL" \
+                    2>/dev/null
+            )"
+
+            if [ -z "$G700_PAGE" ]; then
+
+                echo
+                echo "✗ Unable to connect to the G700 website."
+                echo
+                echo "Please check your internet connection."
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            echo "✓ Connected successfully."
+            echo
+
+            # ------------------------------------------------
+            # Convert HTML to plain text
+            # ------------------------------------------------
+
+            G700_TEXT="$(
+                printf '%s\n' "$G700_PAGE" |
+                sed 's/<[^>]*>/ /g' |
+                sed \
+                    -e 's/&nbsp;/ /g' \
+                    -e 's/&amp;/\&/g' |
+                tr -s '[:space:]' ' '
+            )"
+
+            # ------------------------------------------------
+            # FIXED CONNECTION CODE
+            # ------------------------------------------------
+
+            G700_OLD_CONNECTION="*#20240730#*"
+
+            # ------------------------------------------------
+            # Extract OLD DAILY PASSWORD
+            #
+            # IMPORTANT:
+            #
+            # This specifically searches:
+            #
+            # Below 00.03.36 936348
+            #
+            # and does NOT use the 00.03.36 value.
+            # ------------------------------------------------
+
+            G700_OLD_CODE="$(
+                printf '%s' "$G700_TEXT" |
+                perl -ne '
+                    if (
+                        /Option\s+A\s*[—-]\s*Quick\s+code.*?
+                         Below\s+00\.03\.36\s+(\d{6})/ix
+                    ) {
+                        print $1;
+                        exit;
+                    }
+                '
+            )"
+
+            # ------------------------------------------------
+            # Fallback
+            # ------------------------------------------------
+
+            if ! [[ "$G700_OLD_CODE" =~ ^[0-9]{6}$ ]]; then
+
+                G700_OLD_CODE="$(
+                    printf '%s' "$G700_TEXT" |
+                    perl -ne '
+                        if (
+                            /Below\s+00\.03\.36\s+(\d{6})/i
+                        ) {
+                            print $1;
+                            exit;
+                        }
+                    '
+                )"
+
+            fi
+
+            # ------------------------------------------------
+            # Validate
+            # ------------------------------------------------
+
+            if ! [[ "$G700_OLD_CODE" =~ ^[0-9]{6}$ ]]; then
+
+                echo
+                echo "✗ Could not retrieve the old-version daily password."
+                echo
+                echo "The website format may have changed."
+                echo
+                echo "Connection Code:"
+                echo
+                echo "    $G700_OLD_CONNECTION"
+                echo
+
+                read -r -p "Press ENTER to return..."
+                return
+
+            fi
+
+            # ------------------------------------------------
+            # Display OLD version
+            # ------------------------------------------------
+
+            echo
+            echo "╔══════════════════════════════════════════════════════════════╗"
+            echo "║                    ✓ CODE RETRIEVED                          ║"
+            echo "╚══════════════════════════════════════════════════════════════╝"
+            echo
+
+            echo "Software Version: Below 00.03.36"
+            echo "Source: G700 Online Generator"
+            echo
+
+            echo "┌──────────────────────────────────────────────────────────────┐"
+            echo "│                 📞 CONNECTION CODE                           │"
+            echo "├──────────────────────────────────────────────────────────────┤"
+            echo "│                                                              │"
+            echo "│                    *#20240730#*                              │"
+            echo "│                                                              │"
+            echo "└──────────────────────────────────────────────────────────────┘"
+            echo
+
+            echo "┌──────────────────────────────────────────────────────────────┐"
+            echo "│                 🔐 DAILY PASSWORD                            │"
+            echo "├──────────────────────────────────────────────────────────────┤"
+            echo "│                                                              │"
+            printf "│                       %s                                 │\n" "$G700_OLD_CODE"
+            echo "│                                                              │"
+            echo "└──────────────────────────────────────────────────────────────┘"
+            echo
+
+            echo "=============================================================="
+            echo
+
+            read -r -p "Press ENTER to return..."
+            return
+            ;;
+
+
+        # ====================================================
+        # BACK
+        # ====================================================
+
+        3)
+
+            return
+            ;;
+
+
+        # ====================================================
+        # INVALID
+        # ====================================================
+
+        *)
+
+            echo
+            echo "✗ Invalid selection."
+            sleep 2
+            return
+            ;;
+
+    esac
+}
+
+
+# ============================================================
+# G700 APP INSTALLER
+# ============================================================
+
+G700_INSTALL_APPS() {
+  clear
+
+  select_device || {
+    echo "Returning to main menu..."
+    return
+  }
+
+  wait_for_adb
+
+  echo "🚀 Installing Apps on G700"
+  echo
+
+  # ============================================================
+  # GET ALL USERS
+  # ============================================================
+
+  USERS=($(ADB_CMD shell pm list users 2>/dev/null | \
+    grep -oE 'UserInfo\{[0-9]+' | \
+    cut -d'{' -f2 | \
+    tr -d '\r'))
+
   if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | \
+      grep -oE 'UserInfo\{[0-9]+' | \
+      cut -d'{' -f2 | \
+      tr -d '\r'))
   fi
+
   if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | \
+      grep -oE 'UserInfo\{[0-9]+' | \
+      cut -d'{' -f2 | \
+      tr -d '\r'))
   fi
+
   [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+
   echo "👥 Users: ${USERS[*]}"
+  echo
+
+  # ============================================================
+  # INSTALL ROOT G700 APKs
+  # ============================================================
 
   USE_ALL_USERS=true
+
   install_apks_in_folder "$DESKTOP_APK/G700"
+
   USE_ALL_USERS=false
+
+  # ============================================================
+  # INSTALL APKs FROM SUBFOLDERS
+  # ============================================================
 
   install_from_subfolders "$DESKTOP_APK/G700" "G700"
 
+  # ============================================================
+  # SET PERMISSIONS
+  # ============================================================
+
   set_permissions
 
-  for user in $(ADB_CMD shell pm list users | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2); do
+  # ============================================================
+  # RESTART eLauncher FOR ALL USERS
+  # ============================================================
+
+  for user in $(ADB_CMD shell pm list users 2>/dev/null | \
+    grep -oE 'UserInfo\{[0-9]+' | \
+    cut -d'{' -f2 | \
+    tr -d '\r'); do
+
     echo "Restarting eLauncher for user $user..."
-    ADB_CMD shell am force-stop --user "$user" qa.essa.elauncher
-    ADB_CMD shell am start --user "$user" -n qa.essa.elauncher/.MainActivity
+
+    ADB_CMD shell am force-stop \
+      --user "$user" \
+      qa.essa.elauncher
+
+    ADB_CMD shell am start \
+      --user "$user" \
+      -n qa.essa.elauncher/.MainActivity
+
   done
 
+  echo
   echo "✅ Installed Successfully"
+
   disconnect_if_wireless
+}
+
+
+# ============================================================
+# G700 MAIN MENU
+# ============================================================
+
+G700() {
+
+    while true; do
+
+        clear
+
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                       🚙 G700 TOOLS                          ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║  1. 🔐 Generate G700 Code                                    ║"
+        echo "║  2. 📱 Install Apps                                          ║"
+        echo "║  0. ↩️  Back                                                  ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        read -r -p "CHOOSE: " G700_OPTION
+
+        case "$G700_OPTION" in
+
+            1)
+                G700_GENERATE_CODE
+                ;;
+
+            2)
+                G700_INSTALL_APPS
+                ;;
+
+            0)
+                return
+                ;;
+
+            *)
+                echo
+                echo "✗ Invalid option."
+                sleep 1
+                ;;
+
+        esac
+
+    done
 }
 
 LYNK() {
@@ -1452,6 +2046,293 @@ Dump_Apps() {
   disconnect_if_wireless
 }
 
+# ============================================================
+# DEEPAL TOOLS
+# ============================================================
+
+Deepal73() {
+  while true; do
+    clear
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                     🚗 DEEPAL TOOLS                         ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║  1. 🔐 Generate Engineering Mode Password                  ║"
+    echo "║  2. 🔄 Refresh ADB Connection                               ║"
+    echo "║  3. 📱 Install Deepal Apps                                  ║"
+    echo "║  4. 🔑 Authorize Deepal Tools                               ║"
+    echo "║  5. 📋 Device Information                                   ║"
+    echo "║  0. ↩️  Back                                                 ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo -n "CHOOSE: "
+    read -r dopt
+
+    case "$dopt" in
+      1)
+        deepal_password
+        ;;
+      2)
+        echo ""
+        echo "🔄 Refreshing ADB..."
+        select_device
+        if [[ -n "$TARGET_DEVICE" ]]; then
+          wait_for_adb
+          echo "✅ ADB device: $TARGET_DEVICE"
+        fi
+        ;;
+      3)
+        deepal_install
+        ;;
+      4)
+        deepal_authorize
+        ;;
+      5)
+        deepal_info
+        ;;
+      0)
+        return
+        ;;
+      *)
+        echo "❌ Invalid option!"
+        ;;
+    esac
+
+    echo -e "\nPress Enter to return to Deepal menu..."
+    read -r
+  done
+}
+
+# ------------------------------------------------------------
+# Deepal Engineering Mode Password
+# ------------------------------------------------------------
+deepal_password() {
+  clear
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║              🔐 DEEPAL ENGINEERING PASSWORD                 ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+  echo "Enter the last 4 characters of the VIN:"
+  echo -n "> "
+  read -r vin4
+  vin4=$(echo "$vin4" | tr '[:lower:]' '[:upper:]' | tr -cd '[:alnum:]')
+
+  if [[ ${#vin4} -lt 4 ]]; then
+    echo "❌ VIN must contain at least 4 characters."
+    return
+  fi
+
+  echo ""
+  echo "Select vehicle model:"
+  echo ""
+  echo "1. C385      - Deepal SL03"
+  echo "2. C673      - Deepal S7"
+  echo "3. C673_ICA  - Deepal S07"
+  echo "4. L07       - Deepal L07 (Code: C385_MCA)"
+  echo "5. Custom model code"
+  echo -n "Select (1-5, default 4): "
+  read -r model_choice
+
+  case "$model_choice" in
+    1) model_code="C385" ;;
+    2) model_code="C673" ;;
+    3) model_code="C673_ICA" ;;
+    5)
+      echo -n "Enter custom model code: "
+      read -r model_code
+      model_code=$(echo "$model_code" | tr -d '[:space:]')
+      ;;
+    *) model_code="C385_MCA" ;;
+  esac
+
+  vin_tail="${vin4: -4}"
+  mmdd=$(date '+%m%d')
+
+  # Same password flow used by the standalone Deepal tool:
+  # SHA256(model + VIN last 4 + MMDD), then take 12 chars.
+  if command -v shasum >/dev/null 2>&1; then
+    hash=$(printf '%s' "${model_code}${vin_tail}${mmdd}" | shasum -a 256 | awk '{print $1}')
+  elif command -v sha256sum >/dev/null 2>&1; then
+    hash=$(printf '%s' "${model_code}${vin_tail}${mmdd}" | sha256sum | awk '{print $1}')
+  else
+    echo "❌ SHA-256 utility not found."
+    return
+  fi
+
+  day=$(date '+%-d' 2>/dev/null)
+  if [[ -z "$day" ]]; then
+    day=$(date '+%d' | sed 's/^0//')
+  fi
+
+  start=$((day + 1))
+  password="${hash:$start:12}"
+
+  echo ""
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo "🔐 Engineering Mode Password: $password"
+  echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+  echo ""
+  echo "Vehicle Code : $model_code"
+  echo "VIN Last 4   : $vin_tail"
+  echo "Date         : $mmdd"
+  echo ""
+  echo "➡️  Engineering Mode → USB Mode Switch → DEVICE"
+  echo "➡️  Then choose Refresh ADB from the Deepal menu."
+}
+
+# ------------------------------------------------------------
+# Deepal ADB refresh / connection
+# ------------------------------------------------------------
+deepal_refresh_adb() {
+  echo "🔄 Refreshing ADB connection..."
+  select_device || return 1
+  wait_for_adb
+  echo "✅ ADB ready: $TARGET_DEVICE"
+  return 0
+}
+
+# ------------------------------------------------------------
+# Deepal App installation
+# ------------------------------------------------------------
+deepal_install() {
+  clear
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                  📱 DEEPAL APP INSTALLER                    ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+
+  select_device || { echo "Returning to Deepal menu..."; return; }
+  wait_for_adb
+
+  DEEPAL_DIR="$DESKTOP_APK/Deepal"
+
+  if [[ ! -d "$DEEPAL_DIR" ]]; then
+    echo "❌ Deepal folder not found: $DEEPAL_DIR"
+    echo ""
+    echo "Create: ~/Desktop/apk/Deepal/"
+    return
+  fi
+
+  USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  fi
+  if [[ ${#USERS[@]} -eq 0 ]]; then
+    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+  fi
+  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+
+  echo "👥 Users: ${USERS[*]}"
+  echo "📂 Source: $DEEPAL_DIR"
+  echo ""
+
+  # Normal APKs
+  shopt -s nullglob
+  deepal_apks=("$DEEPAL_DIR"/*.apk)
+  shopt -u nullglob
+
+  for apk in "${deepal_apks[@]}"; do
+    [[ -f "$apk" ]] || continue
+    echo "📦 Installing: $(basename "$apk")"
+
+    for user in "${USERS[@]}"; do
+      output=$(ADB_CMD install -r -d -g --user "$user" "$apk" 2>&1)
+      if echo "$output" | grep -q "Success"; then
+        printf "   👤 User %-3s ✅ Installed\n" "$user"
+      else
+        printf "   👤 User %-3s ❌ Failed\n" "$user"
+        echo "$output"
+      fi
+    done
+  done
+
+  # Split APK folders
+  for folder in "$DEEPAL_DIR"/*/; do
+    [[ -d "$folder" ]] || continue
+
+    shopt -s nullglob
+    files=("$folder"/*.apk)
+    shopt -u nullglob
+    [[ ${#files[@]} -eq 0 ]] && continue
+
+    echo ""
+    echo "📦 Split package: $(basename "$folder")"
+
+    for user in "${USERS[@]}"; do
+      output=$(ADB_CMD install-multiple -r -d -g --user "$user" "${files[@]}" 2>&1)
+      if echo "$output" | grep -q "Success"; then
+        printf "   👤 User %-3s ✅ Installed\n" "$user"
+      else
+        printf "   👤 User %-3s ❌ Failed\n" "$user"
+        echo "$output"
+      fi
+    done
+  done
+
+  echo ""
+  echo "🎉 Deepal installation completed."
+  disconnect_if_wireless
+}
+
+# ------------------------------------------------------------
+# Deepal Tools authorization
+# ------------------------------------------------------------
+deepal_authorize() {
+  clear
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                  🔑 DEEPAL AUTHORIZATION                     ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+
+  select_device || { echo "Returning to Deepal menu..."; return; }
+  wait_for_adb
+
+  DEEPAL_PACKAGE="com.yukiovo.deepaltools"
+
+  echo "🔑 Granting WRITE_SECURE_SETTINGS..."
+  output=$(ADB_CMD shell pm grant "$DEEPAL_PACKAGE" android.permission.WRITE_SECURE_SETTINGS 2>&1)
+
+  if [[ $? -eq 0 ]]; then
+    echo "   ✅ WRITE_SECURE_SETTINGS granted"
+  else
+    echo "   ⚠️ Permission could not be granted automatically"
+    [[ -n "$output" ]] && echo "$output"
+  fi
+
+  echo ""
+  echo "🔑 Granting REQUEST_INSTALL_PACKAGES AppOp..."
+  ADB_CMD shell cmd appops set "$DEEPAL_PACKAGE" REQUEST_INSTALL_PACKAGES allow >/dev/null 2>&1 || true
+  echo "   ✓ Done"
+
+  echo ""
+  echo "🎉 Deepal authorization process completed."
+  disconnect_if_wireless
+}
+
+# ------------------------------------------------------------
+# Deepal device information
+# ------------------------------------------------------------
+deepal_info() {
+  clear
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                    📋 DEEPAL DEVICE INFO                    ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo ""
+
+  select_device || { echo "Returning to Deepal menu..."; return; }
+  wait_for_adb
+
+  echo "Serial      : $(ADB_CMD shell getprop ro.serialno | tr -d '\r')"
+  echo "Model       : $(ADB_CMD shell getprop ro.product.model | tr -d '\r')"
+  echo "Brand       : $(ADB_CMD shell getprop ro.product.brand | tr -d '\r')"
+  echo "Android     : $(ADB_CMD shell getprop ro.build.version.release | tr -d '\r')"
+  echo "SDK         : $(ADB_CMD shell getprop ro.build.version.sdk | tr -d '\r')"
+  echo "Build       : $(ADB_CMD shell getprop ro.build.display.id | tr -d '\r')"
+  echo ""
+  echo "👥 Users:"
+  ADB_CMD shell pm list users
+
+  disconnect_if_wireless
+}
+
 # =========================
 # MENU
 # =========================
@@ -1473,7 +2354,7 @@ menu() {
     echo "║  8. 📱 Install Apps (Haval)                                  ║"
     echo "║  9. 🔓 Unlock Screen (rox)                                   ║"
     echo "║ 10. 📱 Install Apps (Jetour)                                 ║"
-    echo "║ 11. 📱 Install Apps (G700)                                   ║"
+    echo "║ 11. 🚙 Install Apps (G700 + AIO)                             ║"
     echo "║ 12. 📱 Install Apps (LYNK&CO)                                ║"
     echo "║ 13. 📱 Install Apps (Zeeker9X)                               ║"
     echo "║ 14. 🔓 Unlock States (Zeeker9X)                              ║"
@@ -1481,6 +2362,8 @@ menu() {
     echo "║ 16. 📱 Install Apps (BYD_OLD)                                ║"
     echo "║ 17. 📱 Install Apps (AVATR)                                  ║"
     echo "║ 18. 📱 Install Apps (VOYAH)                                  ║"
+    echo "║ 19. 📱 Install Apps (ICAR)                                   ║"
+    echo "║ 20. 🚗 Deepal Tools (S07 / S03 / L07)                        ║"
     echo "║ 99. 📦 Dump All Apps (Latest)                                ║"
     echo "║  0. 🚪 Exit & Close Terminal                                 ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
@@ -1506,6 +2389,8 @@ menu() {
       16) BYD_OLD ;;
       17) AVATR ;;
       18) VOYAH ;;
+      19) ICAR ;;
+      20) Deepal73 ;;
       99) Dump_Apps ;;
       0)
         echo "👋 Closing Terminal..."
