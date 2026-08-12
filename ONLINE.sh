@@ -2054,14 +2054,14 @@ Deepal73() {
   while true; do
     clear
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                     🚗 DEEPAL TOOLS                         ║"
+    echo "║                     🚗 DEEPAL TOOLS                          ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
-    echo "║  1. 🔐 Generate Engineering Mode Password                  ║"
-    echo "║  2. 🔄 Refresh ADB Connection                               ║"
-    echo "║  3. 📱 Install Deepal Apps                                  ║"
-    echo "║  4. 🔑 Authorize Deepal Tools                               ║"
-    echo "║  5. 📋 Device Information                                   ║"
-    echo "║  0. ↩️  Back                                                 ║"
+    echo "║  1. 🔐 Generate Engineering Mode Password                    ║"
+    echo "║  2. 🔄 Refresh ADB Connection                                ║"
+    echo "║  3. 📱 Install Deepal Apps                                   ║"
+    echo "║  4. 🔑 Authorize Deepal Tools                                ║"
+    echo "║  5. 📋 Device Information                                    ║"
+    echo "║  0. ↩️  Back                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo -n "CHOOSE: "
     read -r dopt
@@ -2107,7 +2107,7 @@ Deepal73() {
 deepal_password() {
   clear
   echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║              🔐 DEEPAL ENGINEERING PASSWORD                 ║"
+  echo "║              🔐 DEEPAL ENGINEERING PASSWORD                  ║"
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
   echo "Enter the last 4 characters of the VIN:"
@@ -2195,7 +2195,7 @@ deepal_refresh_adb() {
 deepal_install() {
   clear
   echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║                  📱 DEEPAL APP INSTALLER                    ║"
+  echo "║                  📱 DEEPAL APP INSTALLER                     ║"
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
 
@@ -2313,7 +2313,7 @@ deepal_authorize() {
 deepal_info() {
   clear
   echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║                    📋 DEEPAL DEVICE INFO                    ║"
+  echo "║                    📋 DEEPAL DEVICE INFO                     ║"
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo ""
 
