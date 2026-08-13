@@ -40,32 +40,6 @@ export SKIP_JDK_VERSION_CHECK=true
 
 USE_ALL_USERS=false
 
-# get_package_name() {
-#   local apk="$1"
-#   aapt dump badging "$apk" 2>/dev/null | grep "package: name=" | awk -F"'" '{print $2}'
-# }
-
-# get_package_name() {
-#     local apk="$1"
-
-#     if command -v apkanalyzer >/dev/null 2>&1; then
-#         apkanalyzer manifest application-id "$apk" 2>/dev/null | tr -d '\r\n'
-#         return
-#     fi
-
-#     if command -v aapt >/dev/null 2>&1; then
-#         aapt dump badging "$apk" 2>/dev/null | awk -F"'" '/package: name=/{print $2; exit}'
-#         return
-#     fi
-
-#     if command -v aapt2 >/dev/null 2>&1; then
-#         aapt2 dump packagename "$apk" 2>/dev/null | tr -d '\r\n'
-#         return
-#     fi
-
-#     echo ""
-# }
-
 get_package_name() {
     local apk="$1"
     local pkg=""
@@ -424,187 +398,6 @@ install_apk_safe() {
 
     fi
 }
-
-# install_apk_safe() {
-#     local apk="$1"
-#     local pkg=""
-#     local output=""
-#     local link_output=""
-
-#     echo "📦 Installing: $(basename "$apk")"
-
-#     pkg=$(get_package_name "$apk")
-
-#     # ============================================================
-#     # Install for ALL Users
-#     # ============================================================
-#     if [[ "$USE_ALL_USERS" == true ]]; then
-
-#         for user in $(get_all_users); do
-
-#             output=$(ADB_CMD install -r -d -g --user "$user" "$apk" 2>&1)
-
-#             # Installed normally
-#             if echo "$output" | grep -q "Success"; then
-#                 printf "   👤 User %-3s ✅ Installed\n" "$user"
-#                 continue
-#             fi
-
-#             # Clone user -> Link existing package
-#             if echo "$output" | grep -qi "geely can't only install on clone user"; then
-
-#                 if [[ -n "$pkg" ]]; then
-
-#                     link_output=$(ADB_CMD shell cmd package install-existing --user "$user" "$pkg" 2>&1)
-
-#                     if echo "$link_output" | grep -qi "installed for user"; then
-#                         printf "   👤 User %-3s ✅ Linked\n" "$user"
-#                     else
-#                         printf "   👤 User %-3s ❌ Failed\n" "$user"
-#                     fi
-
-#                 else
-#                     printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
-#                 fi
-
-#                 continue
-#             fi
-
-#             # Signature mismatch
-#             if echo "$output" | grep -q "INSTALL_FAILED_UPDATE_INCOMPATIBLE"; then
-#                 printf "   👤 User %-3s ⚠️ Signature Mismatch\n" "$user"
-#                 continue
-#             fi
-
-#             # Version downgrade
-#             if echo "$output" | grep -q "INSTALL_FAILED_VERSION_DOWNGRADE"; then
-#                 printf "   👤 User %-3s ⚠️ Version Downgrade\n" "$user"
-#                 continue
-#             fi
-
-#             # Other errors
-#             printf "   👤 User %-3s ❌ Failed\n" "$user"
-
-#         done
-
-#         return
-#     fi
-
-#     # ============================================================
-#     # Normal Install
-#     # ============================================================
-#     output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#     if echo "$output" | grep -q "Success"; then
-#         echo "   ✅ Installed"
-#         return
-#     fi
-
-#     if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
-
-#         echo "🔄 Existing version detected..."
-
-#         if [[ -n "$pkg" ]]; then
-
-#             for user in $(get_all_users); do
-#                 ADB_CMD shell pm uninstall --user "$user" "$pkg" >/dev/null 2>&1 || true
-#             done
-
-#             output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#             if echo "$output" | grep -q "Success"; then
-#                 echo "   ✅ Reinstalled"
-#             else
-#                 echo "   ❌ Failed"
-#             fi
-
-#         else
-#             echo "❌ Couldn't detect package name."
-#         fi
-
-#     else
-#         echo "$output"
-#     fi
-# }
-
-# install_apk_safe() {
-#     local apk="$1"
-#     local pkg=""
-#     local output=""
-
-#     echo "📦 Installing: $(basename "$apk")"
-
-#     pkg=$(get_package_name "$apk")
-
-#     # ===== Super Mode (Install for every user) =====
-#     if [[ "$USE_ALL_USERS" == true ]]; then
-
-#         for user in $(get_all_users); do
-
-#             output=$(ADB_CMD install -r -d -g --user "$user" "$apk" 2>&1)
-
-#             # Success
-#             if echo "$output" | grep -q "Success"; then
-#                 printf "   👤 User %-3s ✅ Installed\n" "$user"
-#                 continue
-#             fi
-
-#             # Geely Clone User
-#             if echo "$output" | grep -qi "geely can't only install on clone user"; then
-#                 if [[ -n "$pkg" ]]; then
-#                     ADB_CMD shell cmd package install-existing --user "$user" "$pkg" >/dev/null 2>&1 || true
-#                     printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
-#                 else
-#                     printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
-#                 fi
-#                 continue
-#             fi
-
-#             # Any other error
-#             printf "   👤 User %-3s ❌ Failed\n" "$user"
-#             echo "$output"
-
-#         done
-
-#         return
-#     fi
-
-#     # ===== Normal Install =====
-#     output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#     if echo "$output" | grep -q "Success"; then
-#         echo "   ✅ Installed"
-#         return
-#     fi
-
-#     # Signature / Downgrade conflict
-#     if echo "$output" | grep -q -E "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
-
-#         echo "🔄 Existing version detected..."
-
-#         if [[ -n "$pkg" ]]; then
-
-#             for user in $(get_all_users); do
-#                 ADB_CMD shell pm uninstall --user "$user" "$pkg" >/dev/null 2>&1 || true
-#             done
-
-#             output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#             if echo "$output" | grep -q "Success"; then
-#                 echo "   ✅ Reinstalled"
-#             else
-#                 echo "   ❌ Failed"
-#                 echo "$output"
-#             fi
-
-#         else
-#             echo "❌ Couldn't detect package name."
-#         fi
-
-#     else
-#         echo "$output"
-#     fi
-# }
 
 install_apks_in_folder() {
   local folder="$1"
@@ -2351,56 +2144,158 @@ Dump_Apps() {
 # DEEPAL TOOLS
 # ============================================================
 
+# ============================================================
+# DEEPAL TOOLS
+# ============================================================
+
 Deepal73() {
+
   while true; do
+
     clear
+
+    echo
     echo "╔══════════════════════════════════════════════════════════════╗"
     echo "║                     🚗 DEEPAL TOOLS                          ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
     echo "║  1. 🔐 Generate Engineering Mode Password                    ║"
-    echo "║  2. 🔄 Refresh ADB Connection                                ║"
-    echo "║  3. 📱 Install Deepal Apps                                   ║"
-    echo "║  4. 🔑 Authorize Deepal Tools                                ║"
-    echo "║  5. 📋 Device Information                                    ║"
+    echo "║  2. 🌐 Online Code Generator                                 ║"
+    echo "║  3. 🔄 Refresh ADB Connection                                ║"
+    echo "║  4. 📱 Install Deepal Apps                                   ║"
+    echo "║  5. 🔑 Authorize Deepal Tools                                ║"
+    echo "║  6. 📋 Device Information                                    ║"
     echo "║  0. ↩️  Back                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
     echo -n "CHOOSE: "
     read -r dopt
 
     case "$dopt" in
+
       1)
+
         deepal_password
+
         ;;
+
       2)
-        echo ""
-        echo "🔄 Refreshing ADB..."
-        select_device
-        if [[ -n "$TARGET_DEVICE" ]]; then
-          wait_for_adb
-          echo "✅ ADB device: $TARGET_DEVICE"
-        fi
+
+        deepal_online_generator
+
         ;;
+
       3)
-        deepal_install
+
+        echo
+        echo "🔄 Refreshing ADB..."
+        echo
+
+        select_device
+
+        if [[ -n "$TARGET_DEVICE" ]]; then
+
+          wait_for_adb
+
+          echo
+          echo "✅ ADB device: $TARGET_DEVICE"
+
+        fi
+
         ;;
+
       4)
-        deepal_authorize
+
+        deepal_install
+
         ;;
+
       5)
+
+        deepal_authorize
+
+        ;;
+
+      6)
+
         deepal_info
+
         ;;
+
       0)
+
         return
+
         ;;
+
       *)
+
+        echo
         echo "❌ Invalid option!"
+        echo
+
         ;;
+
     esac
 
-    echo -e "\nPress Enter to return to Deepal menu..."
+    echo
+    echo "Press Enter to return to Deepal menu..."
     read -r
+
   done
+
 }
+
+# Deepal73() {
+#   while true; do
+#     clear
+#     echo "╔══════════════════════════════════════════════════════════════╗"
+#     echo "║                     🚗 DEEPAL TOOLS                          ║"
+#     echo "╠══════════════════════════════════════════════════════════════╣"
+#     echo "║  1. 🔐 Generate Engineering Mode Password                    ║"
+#     echo "║  2. 🔄 Refresh ADB Connection                                ║"
+#     echo "║  3. 📱 Install Deepal Apps                                   ║"
+#     echo "║  4. 🔑 Authorize Deepal Tools                                ║"
+#     echo "║  5. 📋 Device Information                                    ║"
+#     echo "║  0. ↩️  Back                                                  ║"
+#     echo "╚══════════════════════════════════════════════════════════════╝"
+#     echo -n "CHOOSE: "
+#     read -r dopt
+
+#     case "$dopt" in
+#       1)
+#         deepal_password
+#         ;;
+#       2)
+#         echo ""
+#         echo "🔄 Refreshing ADB..."
+#         select_device
+#         if [[ -n "$TARGET_DEVICE" ]]; then
+#           wait_for_adb
+#           echo "✅ ADB device: $TARGET_DEVICE"
+#         fi
+#         ;;
+#       3)
+#         deepal_install
+#         ;;
+#       4)
+#         deepal_authorize
+#         ;;
+#       5)
+#         deepal_info
+#         ;;
+#       0)
+#         return
+#         ;;
+#       *)
+#         echo "❌ Invalid option!"
+#         ;;
+#     esac
+
+#     echo -e "\nPress Enter to return to Deepal menu..."
+#     read -r
+#   done
+# }
 
 # ------------------------------------------------------------
 # Deepal Engineering Mode Password
@@ -2632,6 +2527,456 @@ deepal_info() {
   ADB_CMD shell pm list users
 
   disconnect_if_wireless
+}
+
+# ============================================================
+# DEEPAL ONLINE CODE GENERATOR
+# ============================================================
+
+deepal_online_generator() {
+
+    clear
+
+    # ------------------------------------------------------------
+    # Website
+    # ------------------------------------------------------------
+
+    DEEPAL_ONLINE_URL="https://turansoft.ru"
+
+    echo
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║             🔐 DEEPAL ONLINE CODE GENERATOR                  ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║        Generate codes directly from Deepal website           ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    # ------------------------------------------------------------
+    # Check curl
+    # ------------------------------------------------------------
+
+    if ! command -v curl >/dev/null 2>&1; then
+
+        echo
+        echo "❌ curl is not installed."
+        echo
+
+        read -r -p "Press ENTER to return..."
+        return
+
+    fi
+
+    # ------------------------------------------------------------
+    # Check Python3
+    # ------------------------------------------------------------
+
+    if ! command -v python3 >/dev/null 2>&1; then
+
+        echo
+        echo "❌ python3 is required."
+        echo
+
+        read -r -p "Press ENTER to return..."
+        return
+
+    fi
+
+
+    # ============================================================
+    # SOFTWARE VERSION
+    # ============================================================
+
+    echo "Software Version:"
+    echo
+    echo "1. 3.1 and newer"
+    echo "2. Up to 3.0 (S07 / SL03)"
+    echo "3. Back"
+    echo
+
+    while true; do
+
+        read -r -p "Select version [1-3]: " DEEPAL_VERSION_CHOICE
+
+        case "$DEEPAL_VERSION_CHOICE" in
+
+            1)
+
+                DEEPAL_VERSION="3.1"
+                break
+
+                ;;
+
+            2)
+
+                DEEPAL_VERSION="3.0"
+                DEEPAL_MODEL=""
+                break
+
+                ;;
+
+            3)
+
+                return
+                ;;
+
+            *)
+
+                echo
+                echo "❌ Invalid selection."
+                echo
+
+                ;;
+
+        esac
+
+    done
+
+
+    # ============================================================
+    # MODEL
+    # ============================================================
+
+    if [[ "$DEEPAL_VERSION" != "3.0" ]]; then
+
+        echo
+        echo "Model:"
+        echo
+        echo "1. S07"
+        echo "2. SL03"
+        echo "3. S07 2026"
+        echo
+
+        while true; do
+
+            read -r -p "Select model [1-3]: " DEEPAL_MODEL_CHOICE
+
+            case "$DEEPAL_MODEL_CHOICE" in
+
+                1)
+
+                    DEEPAL_MODEL="S07"
+                    break
+
+                    ;;
+
+                2)
+
+                    DEEPAL_MODEL="SL03"
+                    break
+
+                    ;;
+
+                3)
+
+                    DEEPAL_MODEL="S07_RESTYLE"
+                    break
+
+                    ;;
+
+                *)
+
+                    echo
+                    echo "❌ Invalid model."
+                    echo
+
+                    ;;
+
+            esac
+
+        done
+
+    fi
+
+
+    # ============================================================
+    # VIN LAST 4
+    # ============================================================
+
+    echo
+    echo "Enter the last 4 digits of VIN:"
+    echo
+
+    while true; do
+
+        read -r -p "VIN [0000-9999]: " DEEPAL_SEED
+
+        # Keep numbers only
+        DEEPAL_SEED=$(printf '%s' "$DEEPAL_SEED" | tr -cd '0-9')
+
+        if [[ ${#DEEPAL_SEED} -eq 4 ]]; then
+            break
+        fi
+
+        echo
+        echo "❌ VIN must contain exactly 4 digits."
+        echo
+
+    done
+
+
+    # ============================================================
+    # BUILD JSON
+    # ============================================================
+
+    if [[ "$DEEPAL_VERSION" == "3.0" ]]; then
+
+        DEEPAL_PAYLOAD="$(
+            python3 - "$DEEPAL_SEED" "$DEEPAL_VERSION" <<'PY'
+import json
+import sys
+
+seed = sys.argv[1]
+version = sys.argv[2]
+
+payload = {
+    "seed": seed,
+    "version": version
+}
+
+print(json.dumps(payload, separators=(",", ":")))
+PY
+        )"
+
+    else
+
+        DEEPAL_PAYLOAD="$(
+            python3 \
+                - "$DEEPAL_SEED" "$DEEPAL_VERSION" "$DEEPAL_MODEL" \
+                <<'PY'
+import json
+import sys
+
+seed = sys.argv[1]
+version = sys.argv[2]
+model = sys.argv[3]
+
+payload = {
+    "seed": seed,
+    "version": version,
+    "model": model
+}
+
+print(json.dumps(payload, separators=(",", ":")))
+PY
+        )"
+
+    fi
+
+
+    # ============================================================
+    # ONLINE REQUEST
+    # ============================================================
+
+    clear
+
+    echo
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║             🔐 DEEPAL ONLINE CODE GENERATOR                  ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+
+    if [[ "$DEEPAL_VERSION" == "3.0" ]]; then
+
+        printf "║  Software Version : %-36s     ║\n" "Up to 3.0"
+
+    else
+
+        printf "║  Software Version : %-36s     ║\n" "3.1+"
+        printf "║  Model            : %-36s     ║\n" "$DEEPAL_MODEL"
+
+    fi
+
+    printf "║  VIN              : %-36s     ║\n" "****$DEEPAL_SEED"
+
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    echo "🌐 Connecting to Deepal online generator..."
+    echo
+
+
+    DEEPAL_RESPONSE="$(
+        curl \
+            --silent \
+            --show-error \
+            --location \
+            --fail \
+            --connect-timeout 15 \
+            --max-time 30 \
+            -A "Mozilla/5.0" \
+            -H "Accept: application/json" \
+            -H "Content-Type: application/json" \
+            -X POST \
+            --data "$DEEPAL_PAYLOAD" \
+            "${DEEPAL_ONLINE_URL%/}/generate" \
+            2>&1
+    )"
+
+    DEEPAL_CURL_STATUS=$?
+
+
+    # ============================================================
+    # CONNECTION ERROR
+    # ============================================================
+
+    if [[ $DEEPAL_CURL_STATUS -ne 0 ]]; then
+
+        echo
+        echo "❌ Could not connect to Deepal online generator."
+        echo
+        echo "Server response:"
+        echo "$DEEPAL_RESPONSE"
+        echo
+
+        read -r -p "Press ENTER to return..."
+        return
+
+    fi
+
+
+    # ============================================================
+    # EMPTY RESPONSE
+    # ============================================================
+
+    if [[ -z "$DEEPAL_RESPONSE" ]]; then
+
+        echo
+        echo "❌ Empty response received from server."
+        echo
+
+        read -r -p "Press ENTER to return..."
+        return
+
+    fi
+
+
+    # ============================================================
+    # PARSE JSON RESPONSE
+    # ============================================================
+
+    DEEPAL_CODES="$(
+        python3 - "$DEEPAL_RESPONSE" <<'PY'
+import json
+import sys
+
+try:
+
+    data = json.loads(sys.argv[1])
+
+    yesterday = data.get("codeYesterday") or "-"
+    today = data.get("codeToday") or data.get("code") or "-"
+    tomorrow = data.get("codeTomorrow") or "-"
+
+    print(yesterday)
+    print(today)
+    print(tomorrow)
+
+except Exception:
+
+    print("-")
+    print("-")
+    print("-")
+PY
+    )"
+
+
+    DEEPAL_YESTERDAY="$(printf '%s\n' "$DEEPAL_CODES" | sed -n '1p')"
+    DEEPAL_TODAY="$(printf '%s\n' "$DEEPAL_CODES" | sed -n '2p')"
+    DEEPAL_TOMORROW="$(printf '%s\n' "$DEEPAL_CODES" | sed -n '3p')"
+
+
+    # ============================================================
+    # VALIDATE RESPONSE
+    # ============================================================
+
+    if [[ "$DEEPAL_YESTERDAY" == "-" &&
+          "$DEEPAL_TODAY" == "-" &&
+          "$DEEPAL_TOMORROW" == "-" ]]; then
+
+        echo
+        echo "❌ Could not retrieve codes from website."
+        echo
+        echo "Raw server response:"
+        echo "$DEEPAL_RESPONSE"
+        echo
+
+        read -r -p "Press ENTER to return..."
+        return
+
+    fi
+
+
+    # ============================================================
+    # RESULT
+    # ============================================================
+
+    clear
+
+    echo
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                  ✓ ONLINE CODES FOUND                        ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+
+    if [[ "$DEEPAL_VERSION" == "3.0" ]]; then
+
+        printf "║  Software Version : %-36s     ║\n" "Up to 3.0"
+
+    else
+
+        printf "║  Software Version : %-36s     ║\n" "3.1+"
+        printf "║  Model            : %-36s     ║\n" "$DEEPAL_MODEL"
+
+    fi
+
+    printf "║  VIN              : %-36s     ║\n" "****$DEEPAL_SEED"
+
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+
+    # ============================================================
+    # YESTERDAY
+    # ============================================================
+
+    echo "┌──────────────────────────────────────────────────────────────┐"
+    echo "│                         YESTERDAY                            │"
+    echo "├──────────────────────────────────────────────────────────────┤"
+    printf "│                       %-30s         │\n" "$DEEPAL_YESTERDAY"
+    echo "└──────────────────────────────────────────────────────────────┘"
+    echo
+
+
+    # ============================================================
+    # TODAY
+    # ============================================================
+
+    echo "┌──────────────────────────────────────────────────────────────┐"
+    echo "│                           TODAY                              │"
+    echo "├──────────────────────────────────────────────────────────────┤"
+    printf "│                       %-30s         │\n" "$DEEPAL_TODAY"
+    echo "└──────────────────────────────────────────────────────────────┘"
+    echo
+
+
+    # ============================================================
+    # TOMORROW
+    # ============================================================
+
+    echo "┌──────────────────────────────────────────────────────────────┐"
+    echo "│                          TOMORROW                            │"
+    echo "├──────────────────────────────────────────────────────────────┤"
+    printf "│                       %-30s         │\n" "$DEEPAL_TOMORROW"
+    echo "└──────────────────────────────────────────────────────────────┘"
+    echo
+
+
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    echo "🌐 Source: BestStore.ae"
+    echo "✓ Codes retrieved online"
+    echo
+
+    read -r -p "Press ENTER to return..."
+
 }
 
 # =========================
