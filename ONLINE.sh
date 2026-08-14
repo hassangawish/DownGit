@@ -147,12 +147,266 @@ wait_for_adb() {
   $ADB -s "$TARGET_DEVICE" wait-for-device || true
 }
 
+# install_apk_safe() {
+
+#     local apk="$1"
+#     local pkg=""
+#     local output=""
+#     local link_output=""
+
+#     echo "📦 Installing: $(basename "$apk")"
+
+#     # ============================================================
+#     # GET PACKAGE NAME
+#     # ============================================================
+
+#     pkg=$(get_package_name "$apk")
+
+#     # ============================================================
+#     # ALL USERS MODE
+#     # ============================================================
+
+#     if [[ "$USE_ALL_USERS" == true ]]; then
+
+#         # --------------------------------------------------------
+#         # First install normally on the primary user.
+#         # This makes sure the package exists on the device.
+#         # --------------------------------------------------------
+
+#         output=$(ADB_CMD install -r -d -g --user 0 "$apk" 2>&1)
+
+#         if echo "$output" | grep -q "Success"; then
+#             printf "   👤 User %-3s ✅ Installed\n" "0"
+#         else
+#             printf "   👤 User %-3s ⚠️ Install returned error\n" "0"
+#         fi
+
+#         # --------------------------------------------------------
+#         # If package name wasn't detected from PC tools,
+#         # try to detect it from installed packages.
+#         # --------------------------------------------------------
+
+#         if [[ -z "$pkg" ]]; then
+
+#             if [[ -n "$apk" ]]; then
+
+#                 # Try package name again after installation
+#                 pkg=$(get_package_name "$apk")
+
+#             fi
+#         fi
+
+#         # --------------------------------------------------------
+#         # Show package
+#         # --------------------------------------------------------
+
+#         if [[ -n "$pkg" ]]; then
+#             echo "   📦 Package: $pkg"
+#         else
+#             echo "   ⚠️ Could not determine package name."
+#         fi
+
+#         # --------------------------------------------------------
+#         # Install / link for remaining users
+#         # --------------------------------------------------------
+
+#         for user in $(get_all_users); do
+
+#             # Skip primary user because we already installed it
+#             if [[ "$user" == "0" ]]; then
+#                 continue
+#             fi
+
+#             # ====================================================
+#             # Detect Clone User
+#             # ====================================================
+
+#             USER_INFO=$(
+#                 ADB_CMD shell pm list users 2>/dev/null |
+#                 grep "UserInfo{$user:"
+#             )
+
+#             IS_CLONE=false
+
+#             if echo "$USER_INFO" | grep -qiE "clone|_clone"; then
+#                 IS_CLONE=true
+#             fi
+
+#             # ====================================================
+#             # Normal User
+#             # ====================================================
+
+#             if [[ "$IS_CLONE" == false ]]; then
+
+#                 output=$(
+#                     ADB_CMD install \
+#                         -r \
+#                         -d \
+#                         -g \
+#                         --user "$user" \
+#                         "$apk" 2>&1
+#                 )
+
+#                 if echo "$output" | grep -q "Success"; then
+
+#                     printf "   👤 User %-3s ✅ Installed\n" "$user"
+
+#                 elif echo "$output" | grep -q "INSTALL_FAILED_UPDATE_INCOMPATIBLE"; then
+
+#                     printf "   👤 User %-3s ⚠️ Signature Mismatch\n" "$user"
+
+#                 elif echo "$output" | grep -q "INSTALL_FAILED_VERSION_DOWNGRADE"; then
+
+#                     printf "   👤 User %-3s ⚠️ Version Downgrade\n" "$user"
+
+#                 else
+
+#                     printf "   👤 User %-3s ❌ Failed\n" "$user"
+
+#                 fi
+
+#                 continue
+#             fi
+
+#             # ====================================================
+#             # CLONE USER
+#             # ====================================================
+
+#             echo "   👤 User $user 🔄 Clone detected"
+
+#             if [[ -z "$pkg" ]]; then
+
+#                 printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
+#                 continue
+
+#             fi
+
+#             # ----------------------------------------------------
+#             # Check whether package already exists on device
+#             # ----------------------------------------------------
+
+#             PACKAGE_EXISTS=$(
+#                 ADB_CMD shell pm list packages 2>/dev/null |
+#                 grep -Fx "package:$pkg"
+#             )
+
+#             if [[ -z "$PACKAGE_EXISTS" ]]; then
+
+#                 printf "   👤 User %-3s ❌ Package not available\n" "$user"
+#                 continue
+
+#             fi
+
+#             # ----------------------------------------------------
+#             # Link existing package to clone user
+#             # ----------------------------------------------------
+
+#             link_output=$(
+#                 ADB_CMD shell cmd package install-existing \
+#                     --user "$user" \
+#                     "$pkg" 2>&1
+#             )
+
+#             if echo "$link_output" | grep -qiE \
+#                 "installed for user|already installed"; then
+
+#                 printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+
+#             else
+
+#                 # ------------------------------------------------
+#                 # Second method: pm install-existing
+#                 # ------------------------------------------------
+
+#                 link_output=$(
+#                     ADB_CMD shell pm install-existing \
+#                         --user "$user" \
+#                         "$pkg" 2>&1
+#                 )
+
+#                 if echo "$link_output" | grep -qiE \
+#                     "installed for user|already installed"; then
+
+#                     printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+
+#                 else
+
+#                     printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
+
+#                     echo "      Package: $pkg"
+#                     echo "      Error: $link_output"
+
+#                 fi
+
+#             fi
+
+#         done
+
+#         return
+#     fi
+
+#     # ============================================================
+#     # NORMAL INSTALL MODE
+#     # ============================================================
+
+#     output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
+
+#     if echo "$output" | grep -q "Success"; then
+
+#         echo "   ✅ Installed"
+#         return
+
+#     fi
+
+#     # ============================================================
+#     # Existing Version / Signature / Downgrade
+#     # ============================================================
+
+#     if echo "$output" | grep -qE \
+#         "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
+
+#         echo "🔄 Existing version detected..."
+
+#         if [[ -n "$pkg" ]]; then
+
+#             for user in $(get_all_users); do
+
+#                 ADB_CMD shell pm uninstall \
+#                     --user "$user" \
+#                     "$pkg" >/dev/null 2>&1 || true
+
+#             done
+
+#             output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
+
+#             if echo "$output" | grep -q "Success"; then
+#                 echo "   ✅ Reinstalled"
+#             else
+#                 echo "   ❌ Failed"
+#                 echo "$output"
+#             fi
+
+#         else
+
+#             echo "❌ Couldn't detect package name."
+
+#         fi
+
+#     else
+
+#         echo "$output"
+
+#     fi
+# }
+
 install_apk_safe() {
 
     local apk="$1"
     local pkg=""
     local output=""
     local link_output=""
+    local user_info=""
+    local is_clone=false
 
     echo "📦 Installing: $(basename "$apk")"
 
@@ -169,150 +423,88 @@ install_apk_safe() {
     if [[ "$USE_ALL_USERS" == true ]]; then
 
         # --------------------------------------------------------
-        # First install normally on the primary user.
-        # This makes sure the package exists on the device.
-        # --------------------------------------------------------
-
-        output=$(ADB_CMD install -r -d -g --user 0 "$apk" 2>&1)
-
-        if echo "$output" | grep -q "Success"; then
-            printf "   👤 User %-3s ✅ Installed\n" "0"
-        else
-            printf "   👤 User %-3s ⚠️ Install returned error\n" "0"
-        fi
-
-        # --------------------------------------------------------
-        # If package name wasn't detected from PC tools,
-        # try to detect it from installed packages.
-        # --------------------------------------------------------
-
-        if [[ -z "$pkg" ]]; then
-
-            if [[ -n "$apk" ]]; then
-
-                # Try package name again after installation
-                pkg=$(get_package_name "$apk")
-
-            fi
-        fi
-
-        # --------------------------------------------------------
-        # Show package
-        # --------------------------------------------------------
-
-        if [[ -n "$pkg" ]]; then
-            echo "   📦 Package: $pkg"
-        else
-            echo "   ⚠️ Could not determine package name."
-        fi
-
-        # --------------------------------------------------------
-        # Install / link for remaining users
+        # Process every Android user
         # --------------------------------------------------------
 
         for user in $(get_all_users); do
 
-            # Skip primary user because we already installed it
-            if [[ "$user" == "0" ]]; then
-                continue
-            fi
-
             # ====================================================
-            # Detect Clone User
+            # GET USER INFO
             # ====================================================
 
-            USER_INFO=$(
+            user_info=$(
                 ADB_CMD shell pm list users 2>/dev/null |
-                grep "UserInfo{$user:"
+                tr -d '\r' |
+                grep "UserInfo{$user:" |
+                head -n 1
             )
 
-            IS_CLONE=false
-
-            if echo "$USER_INFO" | grep -qiE "clone|_clone"; then
-                IS_CLONE=true
-            fi
+            # Reset flag every user
+            is_clone=false
 
             # ====================================================
-            # Normal User
+            # DETECT CLONE USER
             # ====================================================
 
-            if [[ "$IS_CLONE" == false ]]; then
-
-                output=$(
-                    ADB_CMD install \
-                        -r \
-                        -d \
-                        -g \
-                        --user "$user" \
-                        "$apk" 2>&1
-                )
-
-                if echo "$output" | grep -q "Success"; then
-
-                    printf "   👤 User %-3s ✅ Installed\n" "$user"
-
-                elif echo "$output" | grep -q "INSTALL_FAILED_UPDATE_INCOMPATIBLE"; then
-
-                    printf "   👤 User %-3s ⚠️ Signature Mismatch\n" "$user"
-
-                elif echo "$output" | grep -q "INSTALL_FAILED_VERSION_DOWNGRADE"; then
-
-                    printf "   👤 User %-3s ⚠️ Version Downgrade\n" "$user"
-
-                else
-
-                    printf "   👤 User %-3s ❌ Failed\n" "$user"
-
-                fi
-
-                continue
+            if echo "$user_info" | grep -qiE "clone|_clone"; then
+                is_clone=true
             fi
 
             # ====================================================
             # CLONE USER
             # ====================================================
 
-            echo "   👤 User $user 🔄 Clone detected"
+            if [[ "$is_clone" == true ]]; then
 
-            if [[ -z "$pkg" ]]; then
+                printf "   👤 User %-3s 🔄 Clone detected\n" "$user"
 
-                printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
-                continue
+                # ------------------------------------------------
+                # Clone requires package name
+                # ------------------------------------------------
 
-            fi
+                if [[ -z "$pkg" ]]; then
 
-            # ----------------------------------------------------
-            # Check whether package already exists on device
-            # ----------------------------------------------------
+                    printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
 
-            PACKAGE_EXISTS=$(
-                ADB_CMD shell pm list packages 2>/dev/null |
-                grep -Fx "package:$pkg"
-            )
+                    continue
+                fi
 
-            if [[ -z "$PACKAGE_EXISTS" ]]; then
+                # ------------------------------------------------
+                # Check if package already exists on device
+                # ------------------------------------------------
 
-                printf "   👤 User %-3s ❌ Package not available\n" "$user"
-                continue
+                local package_exists
 
-            fi
+                package_exists=$(
+                    ADB_CMD shell pm list packages 2>/dev/null |
+                    tr -d '\r' |
+                    grep -Fx "package:$pkg"
+                )
 
-            # ----------------------------------------------------
-            # Link existing package to clone user
-            # ----------------------------------------------------
+                if [[ -z "$package_exists" ]]; then
 
-            link_output=$(
-                ADB_CMD shell cmd package install-existing \
-                    --user "$user" \
-                    "$pkg" 2>&1
-            )
+                    printf "   👤 User %-3s ❌ Package not available\n" "$user"
 
-            if echo "$link_output" | grep -qiE \
-                "installed for user|already installed"; then
+                    continue
+                fi
 
-                printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+                # ------------------------------------------------
+                # First method: cmd package install-existing
+                # ------------------------------------------------
 
-            else
+                link_output=$(
+                    ADB_CMD shell cmd package install-existing \
+                        --user "$user" \
+                        "$pkg" 2>&1
+                )
+
+                if echo "$link_output" | grep -qiE \
+                    "installed for user|already installed|success"; then
+
+                    printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+
+                    continue
+                fi
 
                 # ------------------------------------------------
                 # Second method: pm install-existing
@@ -325,19 +517,106 @@ install_apk_safe() {
                 )
 
                 if echo "$link_output" | grep -qiE \
-                    "installed for user|already installed"; then
+                    "installed for user|already installed|success"; then
 
                     printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
 
+                    continue
+                fi
+
+                # ------------------------------------------------
+                # Clone failed
+                # ------------------------------------------------
+
+                printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
+
+                if [[ -n "$link_output" ]]; then
+                    echo "      $link_output"
+                fi
+
+                continue
+            fi
+
+            # ====================================================
+            # NORMAL USER
+            # ====================================================
+
+            output=$(
+                ADB_CMD install \
+                    -r \
+                    -d \
+                    -g \
+                    --user "$user" \
+                    "$apk" 2>&1
+            )
+
+            # ----------------------------------------------------
+            # Successful normal installation
+            # ----------------------------------------------------
+
+            if echo "$output" | grep -q "Success"; then
+
+                printf "   👤 User %-3s ✅ Installed\n" "$user"
+
+                if [[ "$user" == "0" && -n "$pkg" ]]; then
+                    echo "   📦 Package: $pkg"
+                fi
+
+                continue
+            fi
+
+            # ----------------------------------------------------
+            # Some Geely systems may report clone restriction
+            # even if UserInfo did not expose clone correctly.
+            # Keep the old fallback behavior.
+            # ----------------------------------------------------
+
+            if echo "$output" |
+                grep -qi "geely can't only install on clone user"; then
+
+                printf "   👤 User %-3s 🔄 Clone restriction detected\n" "$user"
+
+                if [[ -n "$pkg" ]]; then
+
+                    link_output=$(
+                        ADB_CMD shell cmd package install-existing \
+                            --user "$user" \
+                            "$pkg" 2>&1
+                    )
+
+                    if echo "$link_output" |
+                        grep -qiE \
+                        "installed for user|already installed|success"; then
+
+                        printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+
+                    else
+
+                        printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
+
+                        if [[ -n "$link_output" ]]; then
+                            echo "      $link_output"
+                        fi
+
+                    fi
+
                 else
 
-                    printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
-
-                    echo "      Package: $pkg"
-                    echo "      Error: $link_output"
+                    printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
 
                 fi
 
+                continue
+            fi
+
+            # ----------------------------------------------------
+            # Normal installation failed
+            # ----------------------------------------------------
+
+            printf "   👤 User %-3s ❌ Failed\n" "$user"
+
+            if [[ -n "$output" ]]; then
+                echo "      $output"
             fi
 
         done
@@ -346,20 +625,30 @@ install_apk_safe() {
     fi
 
     # ============================================================
-    # NORMAL INSTALL MODE
+    # NORMAL SINGLE-USER INSTALL MODE
     # ============================================================
 
-    output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
+    output=$(
+        ADB_CMD install \
+            -r \
+            -d \
+            -g \
+            "$apk" 2>&1
+    )
+
+    # ============================================================
+    # SUCCESS
+    # ============================================================
 
     if echo "$output" | grep -q "Success"; then
 
         echo "   ✅ Installed"
-        return
 
+        return
     fi
 
     # ============================================================
-    # Existing Version / Signature / Downgrade
+    # SIGNATURE / DOWNGRADE / UPDATE CONFLICT
     # ============================================================
 
     if echo "$output" | grep -qE \
@@ -369,6 +658,10 @@ install_apk_safe() {
 
         if [[ -n "$pkg" ]]; then
 
+            # ----------------------------------------------------
+            # Remove package for all users
+            # ----------------------------------------------------
+
             for user in $(get_all_users); do
 
                 ADB_CMD shell pm uninstall \
@@ -377,13 +670,28 @@ install_apk_safe() {
 
             done
 
-            output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
+            # ----------------------------------------------------
+            # Reinstall
+            # ----------------------------------------------------
+
+            output=$(
+                ADB_CMD install \
+                    -r \
+                    -d \
+                    -g \
+                    "$apk" 2>&1
+            )
 
             if echo "$output" | grep -q "Success"; then
+
                 echo "   ✅ Reinstalled"
+
             else
+
                 echo "   ❌ Failed"
+
                 echo "$output"
+
             fi
 
         else
