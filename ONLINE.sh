@@ -1347,481 +1347,264 @@ G700_GENERATE_CODE() {
     clear
 
     echo "╔══════════════════════════════════════════════════════════════╗"
-    echo "║                🔐 G700 ONLINE CODE GENERATOR                 ║"
+    echo "║                🔐 G700 CODE GENERATOR                        ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
-    echo "║       Fetch the latest codes directly from the website.      ║"
+    echo "║              Powered by BEST-STORE algorithm                 ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo
 
-    echo "Software Version:"
+    # ============================================================
+    # REGIONS
+    # ============================================================
+
+    echo "Select Region:"
     echo
-    echo "1. 00.03.36 (Newest)"
-    echo "2. Below 00.03.36"
-    echo "3. Back"
+    echo "  1. 🇦🇪 UAE"
+    echo "  2. 🇸🇦 Saudi Arabia"
+    echo "  3. 🇴🇲 Oman"
+    echo "  4. 🇶🇦 Qatar"
+    echo "  5. 🇰🇼 Kuwait"
+    echo "  6. 🇧🇭 Bahrain"
+    echo "  7. 🇪🇬 Egypt"
+    echo "  0. ↩️  Back"
     echo
 
-    read -r -p "Select version [1-3]: " G700_VERSION
+    read -r -p "Select region [0-7]: " G700_REGION
 
-    case "$G700_VERSION" in
-
-        # ====================================================
-        # 00.03.36
-        # ====================================================
+    case "$G700_REGION" in
 
         1)
-
-            clear
-
-            echo "╔══════════════════════════════════════════════════════════════╗"
-            echo "║                🔐 G700 ONLINE CODE GENERATOR                 ║"
-            echo "╠══════════════════════════════════════════════════════════════╣"
-            echo "║              Software Version: 00.03.36                      ║"
-            echo "╚══════════════════════════════════════════════════════════════╝"
-            echo
-
-            G700_URL="https://essa.qa/elauncher/g700.php"
-
-            echo "🌐 Connecting to G700 online generator..."
-            echo
-
-            # ------------------------------------------------
-            # Check curl
-            # ------------------------------------------------
-
-            if ! command -v curl >/dev/null 2>&1; then
-
-                echo "✗ curl is not installed."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            # ------------------------------------------------
-            # Check perl
-            # ------------------------------------------------
-
-            if ! command -v perl >/dev/null 2>&1; then
-
-                echo "✗ Perl is not installed."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            # ------------------------------------------------
-            # Download page
-            # ------------------------------------------------
-
-            G700_PAGE="$(
-                curl \
-                    -L \
-                    --fail \
-                    --silent \
-                    --show-error \
-                    --connect-timeout 10 \
-                    --max-time 30 \
-                    -A "Mozilla/5.0" \
-                    "$G700_URL" \
-                    2>/dev/null
-            )"
-
-            if [ -z "$G700_PAGE" ]; then
-
-                echo
-                echo "✗ Unable to connect to the G700 website."
-                echo
-                echo "Please check your internet connection."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            echo "✓ Connected successfully."
-            echo
-
-            # ------------------------------------------------
-            # Convert HTML to plain text
-            # ------------------------------------------------
-
-            G700_TEXT="$(
-                printf '%s\n' "$G700_PAGE" |
-                sed 's/<[^>]*>/ /g' |
-                sed \
-                    -e 's/&nbsp;/ /g' \
-                    -e 's/&amp;/\&/g' |
-                tr -s '[:space:]' ' '
-            )"
-
-            # ------------------------------------------------
-            # Extract Option A - Quick Code
-            #
-            # Expected website text:
-            #
-            # Option A — Quick code
-            # ...
-            # 00.03.36 (newest) 442348
-            # Below 00.03.36 936348
-            #
-            # We extract BOTH values independently.
-            # ------------------------------------------------
-
-            G700_NEW_CODE="$(
-                printf '%s' "$G700_TEXT" |
-                perl -ne '
-                    if (
-                        /Option\s+A\s*[—-]\s*Quick\s+code.*?
-                         00\.03\.36\s*\(newest\)\s+(\d{6})/ix
-                    ) {
-                        print $1;
-                        exit;
-                    }
-                '
-            )"
-
-            G700_OLD_CODE="$(
-                printf '%s' "$G700_TEXT" |
-                perl -ne '
-                    if (
-                        /Option\s+A\s*[—-]\s*Quick\s+code.*?
-                         Below\s+00\.03\.36\s+(\d{6})/ix
-                    ) {
-                        print $1;
-                        exit;
-                    }
-                '
-            )"
-
-            # ------------------------------------------------
-            # Fallback extraction
-            #
-            # This is deliberately independent for each
-            # software version.
-            # ------------------------------------------------
-
-            if ! [[ "$G700_NEW_CODE" =~ ^[0-9]{6}$ ]]; then
-
-                G700_NEW_CODE="$(
-                    printf '%s' "$G700_TEXT" |
-                    perl -ne '
-                        if (
-                            /00\.03\.36\s*\(newest\)\s+(\d{6})/i
-                        ) {
-                            print $1;
-                            exit;
-                        }
-                    '
-                )"
-
-            fi
-
-            if ! [[ "$G700_OLD_CODE" =~ ^[0-9]{6}$ ]]; then
-
-                G700_OLD_CODE="$(
-                    printf '%s' "$G700_TEXT" |
-                    perl -ne '
-                        if (
-                            /Below\s+00\.03\.36\s+(\d{6})/i
-                        ) {
-                            print $1;
-                            exit;
-                        }
-                    '
-                )"
-
-            fi
-
-            # ------------------------------------------------
-            # Validate NEW code
-            # ------------------------------------------------
-
-            if ! [[ "$G700_NEW_CODE" =~ ^[0-9]{6}$ ]]; then
-
-                echo
-                echo "✗ Could not retrieve the 00.03.36 code."
-                echo
-                echo "The website format may have changed."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            # ------------------------------------------------
-            # Display NEW version
-            # ------------------------------------------------
-
-            echo
-            echo "╔══════════════════════════════════════════════════════════════╗"
-            echo "║                    ✓ CODE RETRIEVED                          ║"
-            echo "╚══════════════════════════════════════════════════════════════╝"
-            echo
-
-            echo "Software Version: 00.03.36"
-            echo "Source: G700 Online Generator"
-            echo
-
-            echo "┌──────────────────────────────────────────────────────────────┐"
-            echo "│                 📞 CONNECTION CODE                           │"
-            echo "├──────────────────────────────────────────────────────────────┤"
-            echo "│                                                              │"
-            printf "│                    *#%s#*                                │\n" "$G700_NEW_CODE"
-            echo "│                                                              │"
-            echo "└──────────────────────────────────────────────────────────────┘"
-            echo
-
-            echo "┌──────────────────────────────────────────────────────────────┐"
-            echo "│                 🔐 DAILY PASSWORD                            │"
-            echo "├──────────────────────────────────────────────────────────────┤"
-            echo "│                                                              │"
-            printf "│                       %s                                 │\n" "$G700_NEW_CODE"
-            echo "│                                                              │"
-            echo "└──────────────────────────────────────────────────────────────┘"
-            echo
-
-            echo "=============================================================="
-            echo
-
-            read -r -p "Press ENTER to return..."
-            return
+            G700_REGION_NAME="UAE"
+            G700_TZ="Asia/Dubai"
             ;;
-
-
-        # ====================================================
-        # BELOW 00.03.36
-        # ====================================================
 
         2)
-
-            clear
-
-            echo "╔══════════════════════════════════════════════════════════════╗"
-            echo "║                🔐 G700 ONLINE CODE GENERATOR                 ║"
-            echo "╠══════════════════════════════════════════════════════════════╣"
-            echo "║                  Software: Below 00.03.36                    ║"
-            echo "╚══════════════════════════════════════════════════════════════╝"
-            echo
-
-            G700_URL="https://essa.qa/elauncher/g700.php"
-
-            echo "🌐 Connecting to G700 online generator..."
-            echo
-
-            # ------------------------------------------------
-            # Check curl
-            # ------------------------------------------------
-
-            if ! command -v curl >/dev/null 2>&1; then
-
-                echo "✗ curl is not installed."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            # ------------------------------------------------
-            # Check perl
-            # ------------------------------------------------
-
-            if ! command -v perl >/dev/null 2>&1; then
-
-                echo "✗ Perl is not installed."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            # ------------------------------------------------
-            # Download page
-            # ------------------------------------------------
-
-            G700_PAGE="$(
-                curl \
-                    -L \
-                    --fail \
-                    --silent \
-                    --show-error \
-                    --connect-timeout 10 \
-                    --max-time 30 \
-                    -A "Mozilla/5.0" \
-                    "$G700_URL" \
-                    2>/dev/null
-            )"
-
-            if [ -z "$G700_PAGE" ]; then
-
-                echo
-                echo "✗ Unable to connect to the G700 website."
-                echo
-                echo "Please check your internet connection."
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            echo "✓ Connected successfully."
-            echo
-
-            # ------------------------------------------------
-            # Convert HTML to plain text
-            # ------------------------------------------------
-
-            G700_TEXT="$(
-                printf '%s\n' "$G700_PAGE" |
-                sed 's/<[^>]*>/ /g' |
-                sed \
-                    -e 's/&nbsp;/ /g' \
-                    -e 's/&amp;/\&/g' |
-                tr -s '[:space:]' ' '
-            )"
-
-            # ------------------------------------------------
-            # FIXED CONNECTION CODE
-            # ------------------------------------------------
-
-            G700_OLD_CONNECTION="*#20240730#*"
-
-            # ------------------------------------------------
-            # Extract OLD DAILY PASSWORD
-            #
-            # IMPORTANT:
-            #
-            # This specifically searches:
-            #
-            # Below 00.03.36 936348
-            #
-            # and does NOT use the 00.03.36 value.
-            # ------------------------------------------------
-
-            G700_OLD_CODE="$(
-                printf '%s' "$G700_TEXT" |
-                perl -ne '
-                    if (
-                        /Option\s+A\s*[—-]\s*Quick\s+code.*?
-                         Below\s+00\.03\.36\s+(\d{6})/ix
-                    ) {
-                        print $1;
-                        exit;
-                    }
-                '
-            )"
-
-            # ------------------------------------------------
-            # Fallback
-            # ------------------------------------------------
-
-            if ! [[ "$G700_OLD_CODE" =~ ^[0-9]{6}$ ]]; then
-
-                G700_OLD_CODE="$(
-                    printf '%s' "$G700_TEXT" |
-                    perl -ne '
-                        if (
-                            /Below\s+00\.03\.36\s+(\d{6})/i
-                        ) {
-                            print $1;
-                            exit;
-                        }
-                    '
-                )"
-
-            fi
-
-            # ------------------------------------------------
-            # Validate
-            # ------------------------------------------------
-
-            if ! [[ "$G700_OLD_CODE" =~ ^[0-9]{6}$ ]]; then
-
-                echo
-                echo "✗ Could not retrieve the old-version daily password."
-                echo
-                echo "The website format may have changed."
-                echo
-                echo "Connection Code:"
-                echo
-                echo "    $G700_OLD_CONNECTION"
-                echo
-
-                read -r -p "Press ENTER to return..."
-                return
-
-            fi
-
-            # ------------------------------------------------
-            # Display OLD version
-            # ------------------------------------------------
-
-            echo
-            echo "╔══════════════════════════════════════════════════════════════╗"
-            echo "║                    ✓ CODE RETRIEVED                          ║"
-            echo "╚══════════════════════════════════════════════════════════════╝"
-            echo
-
-            echo "Software Version: Below 00.03.36"
-            echo "Source: G700 Online Generator"
-            echo
-
-            echo "┌──────────────────────────────────────────────────────────────┐"
-            echo "│                 📞 CONNECTION CODE                           │"
-            echo "├──────────────────────────────────────────────────────────────┤"
-            echo "│                                                              │"
-            echo "│                    *#20240730#*                              │"
-            echo "│                                                              │"
-            echo "└──────────────────────────────────────────────────────────────┘"
-            echo
-
-            echo "┌──────────────────────────────────────────────────────────────┐"
-            echo "│                 🔐 DAILY PASSWORD                            │"
-            echo "├──────────────────────────────────────────────────────────────┤"
-            echo "│                                                              │"
-            printf "│                       %s                                 │\n" "$G700_OLD_CODE"
-            echo "│                                                              │"
-            echo "└──────────────────────────────────────────────────────────────┘"
-            echo
-
-            echo "=============================================================="
-            echo
-
-            read -r -p "Press ENTER to return..."
-            return
+            G700_REGION_NAME="Saudi Arabia"
+            G700_TZ="Asia/Riyadh"
             ;;
-
-
-        # ====================================================
-        # BACK
-        # ====================================================
 
         3)
+            G700_REGION_NAME="Oman"
+            G700_TZ="Asia/Muscat"
+            ;;
 
+        4)
+            G700_REGION_NAME="Qatar"
+            G700_TZ="Asia/Qatar"
+            ;;
+
+        5)
+            G700_REGION_NAME="Kuwait"
+            G700_TZ="Asia/Kuwait"
+            ;;
+
+        6)
+            G700_REGION_NAME="Bahrain"
+            G700_TZ="Asia/Bahrain"
+            ;;
+
+        7)
+            G700_REGION_NAME="Egypt"
+            G700_TZ="Africa/Cairo"
+            ;;
+
+        0)
             return
             ;;
 
-
-        # ====================================================
-        # INVALID
-        # ====================================================
-
         *)
-
             echo
-            echo "✗ Invalid selection."
+            echo "✗ Invalid region."
             sleep 2
             return
             ;;
 
     esac
+
+    # ============================================================
+    # SOFTWARE VERSION
+    # ============================================================
+
+    clear
+
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                🔐 G700 CODE GENERATOR                        ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    printf "║ Region: %-50s   ║\n" "$G700_REGION_NAME"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    echo "Software Version:"
+    echo
+    echo "  1. 3.30 - 3.35"
+    echo "  2. 3.36+"
+    echo "  0. Back"
+    echo
+
+    read -r -p "Select version [0-2]: " G700_VERSION
+
+    case "$G700_VERSION" in
+
+        1)
+            G700_SEED="20250530"
+            G700_VERSION_NAME="3.30 - 3.35"
+            G700_DYNAMIC="false"
+            G700_DIAL="*#20240730#*"
+            ;;
+
+        2)
+            G700_SEED="20251030"
+            G700_VERSION_NAME="3.36+"
+            G700_DYNAMIC="true"
+            ;;
+
+        0)
+            return
+            ;;
+
+        *)
+            echo
+            echo "✗ Invalid version."
+            sleep 2
+            return
+            ;;
+
+    esac
+
+    # ============================================================
+    # GET CURRENT TIME FOR SELECTED REGION
+    # ============================================================
+
+    G700_DATE="$(
+        TZ="$G700_TZ" date '+%Y-%m-%d'
+    )"
+
+    G700_HOUR="$(
+        TZ="$G700_TZ" date '+%H'
+    )"
+
+    G700_MINUTE="$(
+        TZ="$G700_TZ" date '+%M'
+    )"
+
+    G700_SECOND="$(
+        TZ="$G700_TZ" date '+%S'
+    )"
+
+    # Remove leading zero
+    G700_HOUR=$((10#$G700_HOUR))
+
+    G700_MONTH="$(
+        TZ="$G700_TZ" date '+%m'
+    )"
+
+    G700_DAY="$(
+        TZ="$G700_TZ" date '+%d'
+    )"
+
+    G700_MONTH=$((10#$G700_MONTH))
+    G700_DAY=$((10#$G700_DAY))
+
+    # ============================================================
+    # CALCULATE CODE
+    #
+    # Unlokit:
+    #
+    # data = MM * 10000 + DD * 100 + HOUR
+    # r    = SEED * data - HOUR
+    # code = ((r % 1000000) + 1000000) % 1000000
+    # ============================================================
+
+    G700_DATA=$(
+        printf '%d' \
+        $((G700_MONTH * 10000 + G700_DAY * 100 + G700_HOUR))
+    )
+
+    G700_RESULT=$(
+        python3 - "$G700_SEED" "$G700_DATA" "$G700_HOUR" <<'PY'
+import sys
+
+seed = int(sys.argv[1])
+data = int(sys.argv[2])
+hour = int(sys.argv[3])
+
+mod = 1000000
+
+result = seed * data - hour
+result = ((result % mod) + mod) % mod
+
+print(f"{result:06d}")
+PY
+    )
+
+    # ============================================================
+    # VALIDATE
+    # ============================================================
+
+    if ! [[ "$G700_RESULT" =~ ^[0-9]{6}$ ]]; then
+        echo
+        echo "✗ Failed to calculate code."
+        echo
+        read -r -p "Press ENTER to return..."
+        return
+    fi
+
+    # ============================================================
+    # DISPLAY
+    # ============================================================
+
+    clear
+
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                    ✓ CODE GENERATED                          ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    echo "Region        : $G700_REGION_NAME"
+    echo "Timezone      : $G700_TZ"
+    echo "Software      : $G700_VERSION_NAME"
+    echo "Date          : $G700_DATE"
+    printf "Time          : %02d:%02d:%02d\n" \
+        "$G700_HOUR" "$G700_MINUTE" "$G700_SECOND"
+    echo
+
+    echo "┌──────────────────────────────────────────────────────────────┐"
+    echo "│                    ENGINEERING CODE                          │"
+    echo "├──────────────────────────────────────────────────────────────┤"
+    echo "│                                                              │"
+    printf "│                         %s                               │\n" "$G700_RESULT"
+    echo "│                                                              │"
+    echo "└──────────────────────────────────────────────────────────────┘"
+    echo
+
+    if [[ "$G700_DYNAMIC" == "true" ]]; then
+
+        echo "┌──────────────────────────────────────────────────────────────┐"
+        echo "│                     CONNECTION CODE                          │"
+        echo "├──────────────────────────────────────────────────────────────┤"
+        echo "│                                                              │"
+        printf "│                       *#%s#*                             │\n" "$G700_RESULT"
+        echo "│                                                              │"
+        echo "└──────────────────────────────────────────────────────────────┘"
+
+    else
+
+        echo "┌──────────────────────────────────────────────────────────────┐"
+        echo "│                     CONNECTION CODE                          │"
+        echo "├──────────────────────────────────────────────────────────────┤"
+        echo "│                                                              │"
+        printf "│                      %s                            │\n" "$G700_DIAL"
+        echo "│                                                              │"
+        echo "└──────────────────────────────────────────────────────────────┘"
+
+    fi
+
+    echo
+    echo "⏱ Code is tied to the selected region's local clock."
+    echo "=============================================================="
+    echo
+
+    read -r -p "Press ENTER to return..."
 }
 
 
@@ -3300,6 +3083,1039 @@ PY
 
 }
 
+# ============================================================
+# XMOD / ACTIVA DASHBOARD
+# ============================================================
+
+# Activa_Dashboard() {
+
+#     clear
+
+#     echo
+#     echo "╔══════════════════════════════════════════════════════════════╗"
+#     echo "║                    🚀 ACTIVA DASHBOARD                      ║"
+#     echo "╠══════════════════════════════════════════════════════════════╣"
+#     echo "║              XMod Installer / Dashboard Setup               ║"
+#     echo "╚══════════════════════════════════════════════════════════════╝"
+#     echo
+
+#     # ============================================================
+#     # PATHS
+#     # ============================================================
+
+#     local X9_DIR="$USER_HOME/Desktop/9x"
+
+#     # APK used for the XMod installation/bootstrap
+#     local XMOD_INSTALLER="$X9_DIR/Install/XModInstaller.apk"
+
+#     # Dashboard APK - change this folder/name if needed
+#     local DASHBOARD_DIR="$X9_DIR/Dashboard"
+#     local DASHBOARD_APK="$DASHBOARD_DIR/Dashboard.apk"
+
+#     echo "📁 X9 Directory:"
+#     echo "   $X9_DIR"
+#     echo
+
+#     echo "📦 XMod Installer:"
+#     echo "   $XMOD_INSTALLER"
+#     echo
+
+#     echo "📱 Dashboard:"
+#     echo "   $DASHBOARD_APK"
+#     echo
+
+#     # ============================================================
+#     # CHECK FILES
+#     # ============================================================
+
+#     if [[ ! -d "$X9_DIR" ]]; then
+#         echo "❌ 9x folder not found:"
+#         echo "   $X9_DIR"
+#         return 1
+#     fi
+
+#     if [[ ! -f "$XMOD_INSTALLER" ]]; then
+#         echo "❌ XModInstaller.apk not found:"
+#         echo "   $XMOD_INSTALLER"
+#         return 1
+#     fi
+
+#     if [[ ! -f "$DASHBOARD_APK" ]]; then
+#         echo "❌ Dashboard APK not found:"
+#         echo "   $DASHBOARD_APK"
+#         return 1
+#     fi
+
+#     echo "✅ Required files found."
+#     echo
+
+#     # ============================================================
+#     # SELECT DEVICE
+#     # ============================================================
+
+#     select_device || {
+#         echo "❌ No device selected."
+#         return 1
+#     }
+
+#     wait_for_adb
+
+#     echo
+#     echo "📱 Device:"
+#     echo "   $TARGET_DEVICE"
+#     echo
+
+#     # ============================================================
+#     # VERIFY ADB ROOT
+#     # ============================================================
+
+#     echo "🔐 Checking ADB root..."
+
+#     local ROOT_ID
+#     ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
+
+#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
+#         echo "⚠️ ADB is not currently root."
+#         echo
+#         echo "Attempting adb root..."
+
+#         ADB_CMD root >/dev/null 2>&1 || true
+
+#         sleep 2
+#         wait_for_adb
+
+#         ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
+#     fi
+
+#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
+#         echo
+#         echo "❌ ADB root is required for XMod bootstrap."
+#         echo "   Current identity:"
+#         echo "   $ROOT_ID"
+#         echo
+#         return 1
+#     fi
+
+#     echo "✅ ADB root confirmed."
+#     echo
+
+#     # ============================================================
+#     # INSTALL XMOD INSTALLER
+#     # ============================================================
+
+#     echo "📦 Installing XMod Installer..."
+#     echo
+
+#     if ! ADB_CMD install -r "$XMOD_INSTALLER"; then
+#         echo
+#         echo "❌ Failed to install XModInstaller.apk"
+#         return 1
+#     fi
+
+#     echo
+#     echo "✅ XMod Installer installed."
+#     echo
+
+#     # ============================================================
+#     # GET PACKAGE NAME
+#     # ============================================================
+
+#     local XMOD_PKG="com.xmod.customs.installer"
+
+#     echo "🔎 Checking XMod package..."
+
+#     if ! ADB_CMD shell pm path "$XMOD_PKG" >/dev/null 2>&1; then
+#         echo "❌ XMod Installer package was not found:"
+#         echo "   $XMOD_PKG"
+#         return 1
+#     fi
+
+#     echo "✅ Package detected:"
+#     echo "   $XMOD_PKG"
+#     echo
+
+#     # ============================================================
+#     # GRANT REQUIRED PERMISSIONS
+#     # ============================================================
+
+#     echo "🔐 Applying XMod permissions..."
+
+#     ADB_CMD shell pm grant \
+#         "$XMOD_PKG" \
+#         android.permission.ACCESS_COARSE_LOCATION \
+#         2>/dev/null || true
+
+#     ADB_CMD shell pm grant \
+#         "$XMOD_PKG" \
+#         android.permission.ACCESS_FINE_LOCATION \
+#         2>/dev/null || true
+
+#     ADB_CMD shell appops set \
+#         "$XMOD_PKG" \
+#         COARSE_LOCATION \
+#         allow \
+#         2>/dev/null || true
+
+#     ADB_CMD shell appops set \
+#         "$XMOD_PKG" \
+#         FINE_LOCATION \
+#         allow \
+#         2>/dev/null || true
+
+#     ADB_CMD shell appops set \
+#         "$XMOD_PKG" \
+#         REQUEST_INSTALL_PACKAGES \
+#         allow \
+#         2>/dev/null || true
+
+#     echo "✅ Required permissions applied."
+#     echo
+
+#     # ============================================================
+#     # LAUNCH XMOD INSTALLER
+#     # ============================================================
+
+#     echo "🚀 Launching XMod Installer..."
+
+#     ADB_CMD shell am start \
+#         -n "$XMOD_PKG/.MainActivity" \
+#         >/dev/null 2>&1 || true
+
+#     sleep 2
+
+#     # ============================================================
+#     # INSTALL DASHBOARD
+#     # ============================================================
+
+#     echo
+#     echo "📱 Installing Activa Dashboard..."
+#     echo
+
+#     if ! ADB_CMD install -r "$DASHBOARD_APK"; then
+#         echo
+#         echo "❌ Failed to install Dashboard APK."
+#         return 1
+#     fi
+
+#     echo
+#     echo "✅ Dashboard installed successfully."
+#     echo
+
+#     # ============================================================
+#     # DETECT DASHBOARD PACKAGE
+#     # ============================================================
+
+#     local DASHBOARD_PKG
+#     DASHBOARD_PKG=$(get_package_name "$DASHBOARD_APK")
+
+#     if [[ -z "$DASHBOARD_PKG" ]]; then
+#         echo "⚠️ Could not automatically detect Dashboard package."
+#         echo "   APK was installed successfully."
+#     else
+#         echo "📦 Dashboard package:"
+#         echo "   $DASHBOARD_PKG"
+#         echo
+
+#         echo "🚀 Launching Dashboard..."
+
+#         ADB_CMD shell monkey \
+#             -p "$DASHBOARD_PKG" \
+#             1 >/dev/null 2>&1 || true
+#     fi
+
+#     echo
+#     echo "╔══════════════════════════════════════════════════════════════╗"
+#     echo "║              ✅ ACTIVA DASHBOARD READY                      ║"
+#     echo "╚══════════════════════════════════════════════════════════════╝"
+#     echo
+
+#     disconnect_if_wireless
+# }
+
+# ============================================================
+# ACTIVA DASHBOARD (ZEEKR)
+# ============================================================
+
+# Activa_Dashboard() {
+
+#     clear
+
+#     echo
+#     echo "╔══════════════════════════════════════════════════════════════╗"
+#     echo "║              🚀 ACTIVA DASHBOARD (ZEEKR)                     ║"
+#     echo "╠══════════════════════════════════════════════════════════════╣"
+#     echo "║          XMod Bootstrap + Dashboard Installation             ║"
+#     echo "╚══════════════════════════════════════════════════════════════╝"
+#     echo
+
+#     # ============================================================
+#     # XMOD DIRECTORY
+#     # ============================================================
+
+#     local XMOD_DIR="$DESKTOP_APK/9X/Dashboard"
+
+#     echo "📁 Apps directory:"
+#     echo "   $XMOD_DIR"
+#     echo
+
+#     if [[ ! -d "$XMOD_DIR" ]]; then
+#         echo "❌ Folder not found:"
+#         echo "   $XMOD_DIR"
+#         return 1
+#     fi
+
+#     # ============================================================
+#     # FIND ALL APK FILES
+#     # ============================================================
+
+#     local APK_FILES=()
+
+#     while IFS= read -r -d '' apk; do
+#         APK_FILES+=("$apk")
+#     done < <(find "$XMOD_DIR" -type f \( -iname "*.apk" \) -print0)
+
+#     if [[ ${#APK_FILES[@]} -eq 0 ]]; then
+#         echo "❌ No APK files found in:"
+#         echo "   $XMOD_DIR"
+#         return 1
+#     fi
+
+#     echo "📦 APKs found: ${#APK_FILES[@]}"
+#     echo
+
+#     for apk in "${APK_FILES[@]}"; do
+#         echo "   • $(basename "$apk")"
+#     done
+
+#     echo
+
+#     # ============================================================
+#     # SELECT DEVICE
+#     # ============================================================
+
+#     select_device || {
+#         echo "❌ No device selected."
+#         return 1
+#     }
+
+#     wait_for_adb
+
+#     echo
+#     echo "📱 Device: $TARGET_DEVICE"
+#     echo
+
+#     # ============================================================
+#     # VERIFY ROOT
+#     # ============================================================
+
+#     echo "🔐 Checking ADB root..."
+
+#     local ROOT_ID
+#     ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
+
+#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
+
+#         echo "⚠️ ADB is not root."
+#         echo "🔄 Attempting adb root..."
+
+#         ADB_CMD root >/dev/null 2>&1 || true
+
+#         sleep 2
+#         wait_for_adb
+
+#         ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
+#     fi
+
+#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
+#         echo
+#         echo "❌ ADB root is required."
+#         echo "   Current identity:"
+#         echo "   $ROOT_ID"
+#         return 1
+#     fi
+
+#     echo "✅ ADB root confirmed."
+#     echo
+
+#     # ============================================================
+#     # INSTALL ALL APKS
+#     # ============================================================
+
+#     echo "📦 Installing all APKs from 9X..."
+#     echo
+
+#     local INSTALLED_COUNT=0
+#     local FAILED_COUNT=0
+
+#     for apk in "${APK_FILES[@]}"; do
+
+#         echo "──────────────────────────────────────────────────────────────"
+#         echo "📦 Installing: $(basename "$apk")"
+#         echo
+
+#         if ADB_CMD install -r "$apk"; then
+#             echo "✅ Installed: $(basename "$apk")"
+#             ((INSTALLED_COUNT++))
+#         else
+#             echo "❌ Failed: $(basename "$apk")"
+#             ((FAILED_COUNT++))
+#         fi
+
+#         echo
+#     done
+
+#     echo "──────────────────────────────────────────────────────────────"
+#     echo
+#     echo "📊 Installation Summary"
+#     echo "   ✅ Installed : $INSTALLED_COUNT"
+#     echo "   ❌ Failed    : $FAILED_COUNT"
+#     echo
+
+#     if [[ "$INSTALLED_COUNT" -eq 0 ]]; then
+#         echo "❌ No applications were installed."
+#         return 1
+#     fi
+
+#     # ============================================================
+#     # XMOD INSTALLER PACKAGE
+#     # ============================================================
+
+#     local XMOD_PKG="com.xmod.customs.installer"
+
+#     echo "🔎 Checking XMod Installer..."
+
+#     if ADB_CMD shell pm path "$XMOD_PKG" >/dev/null 2>&1; then
+
+#         echo "✅ XMod Installer detected."
+#         echo
+
+#         # --------------------------------------------------------
+#         # REQUIRED PERMISSIONS
+#         # --------------------------------------------------------
+
+#         echo "🔐 Applying XMod permissions..."
+
+#         ADB_CMD shell pm grant \
+#             "$XMOD_PKG" \
+#             android.permission.ACCESS_COARSE_LOCATION \
+#             2>/dev/null || true
+
+#         ADB_CMD shell pm grant \
+#             "$XMOD_PKG" \
+#             android.permission.ACCESS_FINE_LOCATION \
+#             2>/dev/null || true
+
+#         ADB_CMD shell appops set \
+#             "$XMOD_PKG" \
+#             COARSE_LOCATION \
+#             allow \
+#             2>/dev/null || true
+
+#         ADB_CMD shell appops set \
+#             "$XMOD_PKG" \
+#             FINE_LOCATION \
+#             allow \
+#             2>/dev/null || true
+
+#         ADB_CMD shell appops set \
+#             "$XMOD_PKG" \
+#             REQUEST_INSTALL_PACKAGES \
+#             allow \
+#             2>/dev/null || true
+
+#         echo "✅ XMod permissions applied."
+#         echo
+
+#     else
+
+#         echo "⚠️ XMod Installer package not found:"
+#         echo "   $XMOD_PKG"
+#         echo
+#         echo "The other APKs were installed normally."
+#         echo
+
+#     fi
+
+#     # ============================================================
+#     # LAUNCH XMOD INSTALLER
+#     # ============================================================
+
+#     if ADB_CMD shell pm path "$XMOD_PKG" >/dev/null 2>&1; then
+
+#         echo "🚀 Starting XMod Installer..."
+
+#         ADB_CMD shell am start \
+#             -n "$XMOD_PKG/.MainActivity" \
+#             >/dev/null 2>&1 || true
+
+#         sleep 2
+
+#         echo "✅ XMod Installer started."
+#         echo
+#     fi
+
+#     # ============================================================
+#     # SHOW INSTALLED PACKAGES
+#     # ============================================================
+
+#     echo "📱 Installed XMod-related packages:"
+#     echo
+
+#     ADB_CMD shell pm list packages 2>/dev/null |
+#         grep -Ei 'xmod|activa|dashboard' |
+#         sed 's/^/   /'
+
+#     echo
+
+#     echo "╔══════════════════════════════════════════════════════════════╗"
+#     echo "║              ✅ ACTIVA DASHBOARD COMPLETED                   ║"
+#     echo "╚══════════════════════════════════════════════════════════════╝"
+#     echo
+
+#     disconnect_if_wireless
+# }
+
+# ============================================================
+# ACTIVA DASHBOARD (ZEEKR)
+# ============================================================
+
+Activa_Dashboard() {
+
+    clear
+
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║              🚀 ACTIVA DASHBOARD (ZEEKR)                     ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║              XMod Installer / Root Bootstrap                 ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    # ============================================================
+    # PATHS
+    # ============================================================
+
+    local XMOD_DIR="$DESKTOP_APK/9X/Dashboard"
+    local PACKAGE_NAME="com.xmod.customs.installer"
+    local DAEMON_CLASS="com.xmod.customs.installer.RootCommandDaemon"
+    local AUTO_PREPARE_EXTRA="com.xmod.customs.installer.extra.AUTO_PREPARE_ROOT"
+    local BOOTSTRAP_TOKEN_EXTRA="com.xmod.customs.installer.extra.BOOTSTRAP_TOKEN"
+
+    local INSTALLER_APK=""
+
+    echo "📁 Apps directory:"
+    echo "   $XMOD_DIR"
+    echo
+
+    # ============================================================
+    # CHECK DIRECTORY
+    # ============================================================
+
+    if [[ ! -d "$XMOD_DIR" ]]; then
+        echo "❌ Folder not found:"
+        echo "   $XMOD_DIR"
+        echo
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    # ============================================================
+    # FIND XMOD INSTALLER
+    # ============================================================
+
+    INSTALLER_APK=$(find "$XMOD_DIR" -maxdepth 1 -type f \
+        -iname "XModInstaller.apk" | head -n 1)
+
+    if [[ -z "$INSTALLER_APK" ]]; then
+        echo "❌ XModInstaller.apk not found:"
+        echo "   $XMOD_DIR"
+        echo
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    echo "📦 XMod Installer:"
+    echo "   $(basename "$INSTALLER_APK")"
+    echo
+
+    # ============================================================
+    # COUNT APKs
+    # ============================================================
+
+    local APK_COUNT=0
+
+    for apk in "$XMOD_DIR"/*.apk; do
+        [[ -f "$apk" ]] || continue
+
+        echo "   📦 $(basename "$apk")"
+        ((APK_COUNT++))
+    done
+
+    echo
+
+    if (( APK_COUNT == 0 )); then
+        echo "❌ No APK files found."
+        echo
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    echo "📦 Total APKs: $APK_COUNT"
+    echo
+
+    # ============================================================
+    # SELECT DEVICE
+    # ============================================================
+
+    select_device || {
+        return
+    }
+
+    wait_for_adb
+
+    # ============================================================
+    # ADB TRANSPORT CHECK
+    # ============================================================
+
+    echo
+    echo "🔍 Checking ADB devices..."
+
+    local transport_count
+
+    transport_count=$(
+        "$ADB" devices 2>/dev/null |
+        awk 'NR > 1 && NF >= 2 { count++ } END { print count + 0 }'
+    )
+
+    if (( transport_count > 1 )); then
+
+        echo "ADB reported $transport_count devices."
+        echo "Restarting its server once..."
+
+        "$ADB" kill-server
+        sleep 0.5
+        "$ADB" start-server
+        sleep 0.5
+
+        transport_count=$(
+            "$ADB" devices 2>/dev/null |
+            awk 'NR > 1 && NF >= 2 { count++ } END { print count + 0 }'
+        )
+
+        if (( transport_count > 1 )); then
+
+            echo
+            echo "❌ ADB still reports multiple devices."
+            "$ADB" devices
+            echo
+
+            read -r -p "Press Enter to return to main menu..."
+            return
+        fi
+
+        echo "✅ ADB server restarted."
+    fi
+
+    # ============================================================
+    # WAIT FOR DEVICE
+    # ============================================================
+
+    echo "⏳ Waiting for the car..."
+
+    ADB_CMD wait-for-device
+
+    transport_count=$(
+        "$ADB" devices 2>/dev/null |
+        awk 'NR > 1 && NF >= 2 { count++ } END { print count + 0 }'
+    )
+
+    if (( transport_count > 1 )); then
+
+        echo
+        echo "❌ More than one ADB device became available."
+        "$ADB" devices
+        echo
+
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    # ============================================================
+    # REQUEST ROOT ADB
+    # ============================================================
+
+    echo
+    echo "🔐 Requesting root ADB..."
+
+    ADB_CMD shell 1234abcd >/dev/null 2>&1 || true
+
+    local ADB_UID=""
+
+    for attempt in {1..50}; do
+
+        if ADB_UID=$(ADB_CMD shell id -u 2>/dev/null); then
+
+            ADB_UID=${ADB_UID//$'\r'/}
+            ADB_UID=${ADB_UID//$'\n'/}
+
+            if [[ "$ADB_UID" == "0" ]]; then
+                break
+            fi
+        fi
+
+        sleep 0.2
+    done
+
+    if [[ "$ADB_UID" != "0" ]]; then
+
+        echo
+        echo "❌ The ADB shell is not root."
+        echo "   UID=$ADB_UID"
+        echo
+
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    echo "✅ Root ADB verified (uid=0)."
+    echo
+
+    # ============================================================
+    # INSTALL ALL APPS FROM 9X
+    # ============================================================
+
+    echo "📦 Installing all applications from 9X..."
+    echo
+
+    local apk
+    local INSTALL_OUTPUT
+
+    for apk in "$XMOD_DIR"/*.apk; do
+
+        [[ -f "$apk" ]] || continue
+
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo "📦 Installing: $(basename "$apk")"
+        echo
+
+        if INSTALL_OUTPUT=$(ADB_CMD install -r "$apk" 2>&1); then
+
+            echo "$INSTALL_OUTPUT"
+            echo "✅ Installed successfully."
+
+        else
+
+            echo "$INSTALL_OUTPUT"
+
+            if [[ "$INSTALL_OUTPUT" == *"INSTALL_FAILED_UPDATE_INCOMPATIBLE"* ]]; then
+
+                echo
+                echo "⚠️ INSTALL_FAILED_UPDATE_INCOMPATIBLE"
+                echo "   Existing application has a different signature."
+
+            else
+
+                echo
+                echo "❌ Installation failed."
+            fi
+        fi
+
+        echo
+    done
+
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+
+    # ============================================================
+    # VERIFY XMOD INSTALLER
+    # ============================================================
+
+    echo "🔎 Checking XMod Installer..."
+
+    local PACKAGE_APK
+
+    PACKAGE_APK=$(
+        ADB_CMD shell pm path "$PACKAGE_NAME" |
+        tr -d '\r' |
+        sed -n 's/^package://p' |
+        head -n 1
+    )
+
+    if [[ -z "$PACKAGE_APK" ]]; then
+
+        echo
+        echo "❌ Could not resolve installed XMod Installer:"
+        echo "   $PACKAGE_NAME"
+        echo
+
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    echo "✅ XMod Installer detected."
+    echo
+
+    # ============================================================
+    # REGISTER XMOD INSTALLER UPDATE OWNER
+    # ============================================================
+
+    echo "🔐 Registering XMod Installer as its own update owner..."
+
+    ADB_CMD install -r \
+        -i "$PACKAGE_NAME" \
+        "$INSTALLER_APK"
+
+    # ============================================================
+    # GRANT LOCATION ACCESS
+    # ============================================================
+
+    echo "🔐 Granting XMod Installer location access..."
+
+    ADB_CMD shell pm grant \
+        "$PACKAGE_NAME" \
+        android.permission.ACCESS_COARSE_LOCATION
+
+    ADB_CMD shell pm grant \
+        "$PACKAGE_NAME" \
+        android.permission.ACCESS_FINE_LOCATION
+
+    ADB_CMD shell appops set \
+        "$PACKAGE_NAME" \
+        COARSE_LOCATION \
+        allow
+
+    ADB_CMD shell appops set \
+        "$PACKAGE_NAME" \
+        FINE_LOCATION \
+        allow
+
+    ADB_CMD shell appops set \
+        "$PACKAGE_NAME" \
+        REQUEST_INSTALL_PACKAGES \
+        allow
+
+    echo "✅ XMod Installer permissions granted."
+    echo
+
+    # ============================================================
+    # BOOTSTRAP TOKEN
+    # ============================================================
+
+    local BOOTSTRAP_TOKEN=""
+
+    echo "🔑 Bootstrap Token"
+    echo
+    echo "Enter the XMod bootstrap token."
+    echo "Press Enter to continue without a token."
+    echo
+
+    read -r -p "BOOTSTRAP TOKEN: " BOOTSTRAP_TOKEN
+
+    if [[ -n "$BOOTSTRAP_TOKEN" ]]; then
+
+        if [[ ! "$BOOTSTRAP_TOKEN" =~ ^xmod_boot_[A-Za-z0-9_-]{43}$ ]]; then
+
+            echo
+            echo "❌ Desktop supplied an invalid bootstrap token."
+            echo
+
+            read -r -p "Press Enter to return to main menu..."
+            return
+        fi
+
+        echo "✅ Bootstrap token format verified."
+    fi
+
+    # ============================================================
+    # START XMOD INSTALLER
+    # ============================================================
+
+    echo
+    echo "🚀 Starting XMod Installer..."
+
+    if [[ -n "$BOOTSTRAP_TOKEN" ]]; then
+
+        ADB_CMD shell am start -W \
+            -n "$PACKAGE_NAME/.MainActivity" \
+            --es "$BOOTSTRAP_TOKEN_EXTRA" \
+            "$BOOTSTRAP_TOKEN" \
+            >/dev/null
+
+        BOOTSTRAP_TOKEN=""
+
+    else
+
+        ADB_CMD shell am start -W \
+            -n "$PACKAGE_NAME/.MainActivity" \
+            >/dev/null
+    fi
+
+    # ============================================================
+    # CURRENT USER
+    # ============================================================
+
+    local CURRENT_USER
+
+    CURRENT_USER=$(
+        ADB_CMD shell am get-current-user |
+        tr -d '\r'
+    )
+
+    # ============================================================
+    # APPLICATION DATA
+    # ============================================================
+
+    local APP_DATA
+    local CHANNEL
+    local DAEMON_LOG
+    local APP_UID
+
+    APP_DATA="/data/user/$CURRENT_USER/$PACKAGE_NAME"
+    CHANNEL="$APP_DATA/files/root-channel"
+    DAEMON_LOG="/data/local/tmp/xmod-installer-root.log"
+
+    echo
+    echo "🔧 Preparing root channel..."
+    echo
+    echo "   Current User : $CURRENT_USER"
+    echo "   APK          : $PACKAGE_APK"
+    echo "   App Data     : $APP_DATA"
+    echo "   Root Channel : $CHANNEL"
+    echo "   Daemon Log   : $DAEMON_LOG"
+    echo
+
+    # ============================================================
+    # GET APPLICATION UID
+    # ============================================================
+
+    APP_UID=$(
+        ADB_CMD shell stat -c %u "$APP_DATA" |
+        tr -d '\r'
+    )
+
+    if [[ -z "$APP_UID" ]]; then
+
+        echo "❌ Could not determine XMod Installer UID."
+        echo
+
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    echo "   App UID: $APP_UID"
+    echo
+
+    # ============================================================
+    # STOP PREVIOUS DAEMON
+    # ============================================================
+
+    echo "🛑 Stopping previous RootCommandDaemon instances..."
+
+    ADB_CMD shell \
+        "for pid in \$(pidof app_process 2>/dev/null); do
+            if tr '\\0' ' ' < /proc/\$pid/cmdline 2>/dev/null |
+               grep -Fq '$DAEMON_CLASS $CHANNEL';
+            then
+                kill \$pid 2>/dev/null || true
+            fi
+        done"
+
+    sleep 0.25
+
+    # ============================================================
+    # PREPARE ROOT CHANNEL
+    # ============================================================
+
+    echo "📁 Preparing root-channel..."
+
+    ADB_CMD shell \
+        "mkdir -p '$CHANNEL' &&
+         rm -f '$CHANNEL'/*.request '$CHANNEL'/*.request.tmp \
+               '$CHANNEL'/*.result '$CHANNEL'/*.result.tmp \
+               '$CHANNEL/ready' &&
+         chown '$APP_UID:$APP_UID' '$CHANNEL' &&
+         chmod 700 '$CHANNEL'"
+
+    # ============================================================
+    # START ROOT COMMAND DAEMON
+    # ============================================================
+
+    echo "🚀 Starting RootCommandDaemon..."
+
+    ADB_CMD shell \
+        "CLASSPATH='$PACKAGE_APK' \
+         nohup app_process /system/bin \
+         '$DAEMON_CLASS' \
+         '$CHANNEL' \
+         </dev/null \
+         >'$DAEMON_LOG' 2>&1 &"
+
+    # ============================================================
+    # WAIT FOR READY
+    # ============================================================
+
+    echo "⏳ Waiting for root companion..."
+
+    local ROOT_READY=false
+
+    for attempt in {1..50}; do
+
+        if ADB_CMD shell test -f "$CHANNEL/ready"; then
+
+            ROOT_READY=true
+            break
+        fi
+
+        sleep 0.1
+    done
+
+    # ============================================================
+    # ROOT DAEMON READY
+    # ============================================================
+
+    if [[ "$ROOT_READY" == true ]]; then
+
+        ADB_CMD shell am start -W \
+            -n "$PACKAGE_NAME/.MainActivity" \
+            --ez "$AUTO_PREPARE_EXTRA" true \
+            >/dev/null
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║              ✅ ACTIVA DASHBOARD READY                     ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║ XMod Installer installed                                    ║"
+        echo "║ Root ADB verified                                            ║"
+        echo "║ Permissions granted                                         ║"
+        echo "║ RootCommandDaemon running                                   ║"
+        echo "║ Root channel ready                                          ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        disconnect_if_wireless
+
+        read -r -p "Press Enter to return to main menu..."
+        return
+    fi
+
+    # ============================================================
+    # ROOT DAEMON FAILED
+    # ============================================================
+
+    echo
+    echo "❌ Root companion did not start."
+    echo
+    echo "Device log:"
+    echo "   $DAEMON_LOG"
+    echo
+
+    ADB_CMD shell cat "$DAEMON_LOG" || true
+
+    echo
+    read -r -p "Press Enter to return to main menu..."
+
+    disconnect_if_wireless
+}
+
 # =========================
 # MENU
 # =========================
@@ -3331,6 +4147,7 @@ menu() {
     echo "║ 18. 📱 Install Apps (VOYAH)                                  ║"
     echo "║ 19. 📱 Install Apps (ICAR)                                   ║"
     echo "║ 20. 🚗 Deepal Tools (S07 / S03 / L07)                        ║"
+    echo "║ 21. 🚀 Activa Dashboard (Zeekr)                              ║"
     echo "║ 99. 📦 Dump All Apps (Latest)                                ║"
     echo "║  0. 🚪 Exit & Close Terminal                                 ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
@@ -3358,6 +4175,7 @@ menu() {
       18) VOYAH ;;
       19) ICAR ;;
       20) Deepal73 ;;
+      21) Activa_Dashboard ;;
       99) Dump_Apps ;;
       0)
         echo "👋 Closing Terminal..."
