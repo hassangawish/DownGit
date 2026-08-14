@@ -15,7 +15,7 @@ fi
 clear
 
 # Resize Terminal to 65 columns × 30 rows
-printf '\e[8;30;65t'
+printf '\e[8;30;64t'
 
 set +e
 
@@ -429,7 +429,7 @@ install_apk_safe() {
         for user in $(get_all_users); do
 
             # ====================================================
-            # GET USER INFO
+            # USER 0 / NORMAL USERS / CLONE DETECTION
             # ====================================================
 
             user_info=$(
@@ -439,12 +439,7 @@ install_apk_safe() {
                 head -n 1
             )
 
-            # Reset flag every user
             is_clone=false
-
-            # ====================================================
-            # DETECT CLONE USER
-            # ====================================================
 
             if echo "$user_info" | grep -qiE "clone|_clone"; then
                 is_clone=true
@@ -459,7 +454,7 @@ install_apk_safe() {
                 printf "   👤 User %-3s 🔄 Clone detected\n" "$user"
 
                 # ------------------------------------------------
-                # Clone requires package name
+                # Package name is required
                 # ------------------------------------------------
 
                 if [[ -z "$pkg" ]]; then
@@ -470,27 +465,18 @@ install_apk_safe() {
                 fi
 
                 # ------------------------------------------------
-                # Check if package already exists on device
+                # IMPORTANT:
+                # Do NOT check "pm list packages" first.
+                #
+                # Some Clone implementations do not expose the
+                # package through the normal package list even
+                # though install-existing can still link it.
                 # ------------------------------------------------
 
-                local package_exists
-
-                package_exists=$(
-                    ADB_CMD shell pm list packages 2>/dev/null |
-                    tr -d '\r' |
-                    grep -Fx "package:$pkg"
-                )
-
-                if [[ -z "$package_exists" ]]; then
-
-                    printf "   👤 User %-3s ❌ Package not available\n" "$user"
-
-                    continue
-                fi
-
-                # ------------------------------------------------
-                # First method: cmd package install-existing
-                # ------------------------------------------------
+                # =================================================
+                # METHOD 1
+                # cmd package install-existing
+                # =================================================
 
                 link_output=$(
                     ADB_CMD shell cmd package install-existing \
@@ -506,9 +492,10 @@ install_apk_safe() {
                     continue
                 fi
 
-                # ------------------------------------------------
-                # Second method: pm install-existing
-                # ------------------------------------------------
+                # =================================================
+                # METHOD 2
+                # pm install-existing
+                # =================================================
 
                 link_output=$(
                     ADB_CMD shell pm install-existing \
@@ -524,11 +511,11 @@ install_apk_safe() {
                     continue
                 fi
 
-                # ------------------------------------------------
-                # Clone failed
-                # ------------------------------------------------
+                # =================================================
+                # CLONE FAILED
+                # =================================================
 
-                printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
+                printf "   👤 User %-3s ❌ Clone Link Failed\n" "$user"
 
                 if [[ -n "$link_output" ]]; then
                     echo "      $link_output"
@@ -550,14 +537,15 @@ install_apk_safe() {
                     "$apk" 2>&1
             )
 
-            # ----------------------------------------------------
-            # Successful normal installation
-            # ----------------------------------------------------
+            # ====================================================
+            # NORMAL INSTALL SUCCESS
+            # ====================================================
 
             if echo "$output" | grep -q "Success"; then
 
                 printf "   👤 User %-3s ✅ Installed\n" "$user"
 
+                # Show package only once for primary user
                 if [[ "$user" == "0" && -n "$pkg" ]]; then
                     echo "   📦 Package: $pkg"
                 fi
@@ -565,55 +553,80 @@ install_apk_safe() {
                 continue
             fi
 
-            # ----------------------------------------------------
-            # Some Geely systems may report clone restriction
-            # even if UserInfo did not expose clone correctly.
-            # Keep the old fallback behavior.
-            # ----------------------------------------------------
+            # ====================================================
+            # GEELY CLONE FALLBACK
+            #
+            # Some devices may not expose "_clone" correctly in
+            # UserInfo, but the package manager tells us that the
+            # APK can only be installed on a Clone user.
+            # ====================================================
 
             if echo "$output" |
                 grep -qi "geely can't only install on clone user"; then
 
                 printf "   👤 User %-3s 🔄 Clone restriction detected\n" "$user"
 
-                if [[ -n "$pkg" ]]; then
-
-                    link_output=$(
-                        ADB_CMD shell cmd package install-existing \
-                            --user "$user" \
-                            "$pkg" 2>&1
-                    )
-
-                    if echo "$link_output" |
-                        grep -qiE \
-                        "installed for user|already installed|success"; then
-
-                        printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
-
-                    else
-
-                        printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
-
-                        if [[ -n "$link_output" ]]; then
-                            echo "      $link_output"
-                        fi
-
-                    fi
-
-                else
+                if [[ -z "$pkg" ]]; then
 
                     printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
 
+                    continue
+                fi
+
+                # ------------------------------------------------
+                # Try cmd package install-existing
+                # ------------------------------------------------
+
+                link_output=$(
+                    ADB_CMD shell cmd package install-existing \
+                        --user "$user" \
+                        "$pkg" 2>&1
+                )
+
+                if echo "$link_output" | grep -qiE \
+                    "installed for user|already installed|success"; then
+
+                    printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+
+                    continue
+                fi
+
+                # ------------------------------------------------
+                # Try pm install-existing
+                # ------------------------------------------------
+
+                link_output=$(
+                    ADB_CMD shell pm install-existing \
+                        --user "$user" \
+                        "$pkg" 2>&1
+                )
+
+                if echo "$link_output" | grep -qiE \
+                    "installed for user|already installed|success"; then
+
+                    printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
+
+                    continue
+                fi
+
+                # ------------------------------------------------
+                # Clone fallback failed
+                # ------------------------------------------------
+
+                printf "   👤 User %-3s ❌ Clone Link Failed\n" "$user"
+
+                if [[ -n "$link_output" ]]; then
+                    echo "      $link_output"
                 fi
 
                 continue
             fi
 
-            # ----------------------------------------------------
-            # Normal installation failed
-            # ----------------------------------------------------
+            # ====================================================
+            # NORMAL INSTALL FAILED
+            # ====================================================
 
-            printf "   👤 User %-3s ❌ Failed\n" "$user"
+            printf "   👤 User %-3s ❌ Install Failed\n" "$user"
 
             if [[ -n "$output" ]]; then
                 echo "      $output"
@@ -625,7 +638,7 @@ install_apk_safe() {
     fi
 
     # ============================================================
-    # NORMAL SINGLE-USER INSTALL MODE
+    # SINGLE USER / NORMAL INSTALL MODE
     # ============================================================
 
     output=$(
@@ -648,10 +661,11 @@ install_apk_safe() {
     fi
 
     # ============================================================
-    # SIGNATURE / DOWNGRADE / UPDATE CONFLICT
+    # SIGNATURE / VERSION CONFLICT
     # ============================================================
 
-    if echo "$output" | grep -qE \
+    if echo "$output" |
+        grep -qE \
         "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
 
         echo "🔄 Existing version detected..."
@@ -659,7 +673,7 @@ install_apk_safe() {
         if [[ -n "$pkg" ]]; then
 
             # ----------------------------------------------------
-            # Remove package for all users
+            # Uninstall package for all users
             # ----------------------------------------------------
 
             for user in $(get_all_users); do
@@ -689,7 +703,6 @@ install_apk_safe() {
             else
 
                 echo "   ❌ Failed"
-
                 echo "$output"
 
             fi
