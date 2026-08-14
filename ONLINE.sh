@@ -15,7 +15,7 @@ fi
 clear
 
 # Resize Terminal to 65 columns × 30 rows
-printf '\e[8;30;64t'
+printf '\e[8;30;65t'
 
 set +e
 
