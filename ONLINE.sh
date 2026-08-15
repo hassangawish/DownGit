@@ -900,7 +900,7 @@ ROX() {
     echo "╠══════════════════════════════════════════════════════════════╣"
     echo "║  1. 📱 Install Apps                                          ║"
     echo "║  2. 📥 Download & Install Display Mirror                     ║"
-    echo "║  9. 🔓 Unlock Screen (rox)                                   ║"
+    echo "║  3. 🔓 Unlock Screen (rox)                                   ║"
     echo "║  0. ↩️  Back                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo
@@ -1059,7 +1059,7 @@ ROX() {
         read -r -p "Press ENTER to continue..."
         ;;
 
-      9)
+      3)
         Rox-Unlock
         ;;
 
@@ -3716,10 +3716,10 @@ menu() {
     echo "║       💻 BEST STORE AIO Sript (BY: Hassan Gawish) 💻         ║"
     echo "║     Advanced ADB Installer for Chinese Car Head Units        ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
-    echo "║  1. 🚗 BYD Special Tools                                     ║"
-    echo "║  2. 🚙 ROX Special Tools                                     ║"
-    echo "║  3. 🚘 Zeekr Special Tools                                   ║"
-    echo "║  4. 🚗 Jetour Special Tools                                  ║"
+    echo "║  1. 🚗 Open BYD Special Tools                                ║"
+    echo "║  2. 🚙 Open Special Tools                                    ║"
+    echo "║  3. 🚘 Open Special Tools                                    ║"
+    echo "║  4. 🚗 Open Special Tools                                    ║"
     echo "║  5. 📱 Install Apps (LiAuto)                                 ║"
     echo "║  6. 📱 Install Apps (Haval)                                  ║"
     echo "║  7. 📱 Install Apps (Leepmotor)                              ║"
