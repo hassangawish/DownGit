@@ -1062,42 +1062,183 @@ simcard() {
 
 ROX() {
   clear
-  select_device || { echo "Returning to main menu..."; return; }
-  wait_for_adb
-  echo "🚀 Installing Apps on ROX"
-    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
-  if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=($(ADB_CMD shell cmd user list 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
-  fi
-  if [[ ${#USERS[@]} -eq 0 ]]; then
-    USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
-  fi
-  [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
-  echo "👥 Users: ${USERS[*]}"
 
-  USE_ALL_USERS=true
-  install_apks_in_folder "$DESKTOP_APK/Rox"
-  USE_ALL_USERS=false
+  while true; do
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                         🚙 ROX TOOLS                         ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║  1. 📱 Install Apps                                          ║"
+    echo "║  2. 📥 Download & Install Display Mirror                     ║"
+    echo "║  0. ↩️  Back                                                  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
 
-  install_from_subfolders "$DESKTOP_APK/Rox" "ROX"
+    read -r -p "CHOOSE: " ROX_OPTION
 
-  for user in "${USERS[@]}"; do
-    ADB_CMD install -t -g --user "$user" "$DESKTOP_APK/rox/Launcher"/*.apk || true
-    ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Ayah"/*.apk || true
-    ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Downloader"/*.apk || true
+    case "$ROX_OPTION" in
+
+      1)
+        clear
+        select_device || { echo "Returning to ROX menu..."; continue; }
+        wait_for_adb
+
+        echo "🚀 Installing Apps on ROX"
+
+        USERS=($(ADB_CMD shell pm list users 2>/dev/null | \
+          grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+
+        if [[ ${#USERS[@]} -eq 0 ]]; then
+          USERS=($(ADB_CMD shell cmd user list 2>/dev/null | \
+            grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+        fi
+
+        if [[ ${#USERS[@]} -eq 0 ]]; then
+          USERS=($(ADB_CMD shell dumpsys user 2>/dev/null | \
+            grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2 | tr -d '\r'))
+        fi
+
+        [[ ${#USERS[@]} -eq 0 ]] && USERS=(0)
+        echo "👥 Users: ${USERS[*]}"
+
+        USE_ALL_USERS=true
+        install_apks_in_folder "$DESKTOP_APK/Rox"
+        install_apks_in_folder "$DESKTOP_APK/Rox/Mirror"
+        USE_ALL_USERS=false
+
+        install_from_subfolders "$DESKTOP_APK/Rox" "ROX"
+
+        for user in "${USERS[@]}"; do
+          ADB_CMD install -t -g --user "$user" "$DESKTOP_APK/rox/Launcher"/*.apk || true
+          ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Ayah"/*.apk || true
+          ADB_CMD install-multiple -r --user "$user" "$DESKTOP_APK/rox/Downloader"/*.apk || true
+        done
+
+        ADB_CMD shell am start -n com.example.displaymirror/.MainActivity
+
+        set_permissions
+
+        echo "✅ Installed Successfully"
+        disconnect_if_wireless
+        read -r -p "Press ENTER to continue..."
+        ;;
+
+      2)
+        clear
+
+        MIRROR_DIR="$DESKTOP_APK/Rox/Mirror"
+        MIRROR_APK="$MIRROR_DIR/Display_Mirror.apk"
+        MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
+
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║              📥 DISPLAY MIRROR DOWNLOADER                    ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        echo "📁 Target folder:"
+        echo "   $MIRROR_DIR"
+        echo
+
+        # ============================================================
+        # CHECK / CREATE ROX/Mirror FOLDER
+        # ============================================================
+
+        if [[ ! -d "$MIRROR_DIR" ]]; then
+          echo "📁 Mirror folder not found."
+          echo "📂 Creating:"
+          echo "   $MIRROR_DIR"
+          mkdir -p "$MIRROR_DIR" || {
+            echo "❌ Failed to create Mirror folder."
+            read -r -p "Press ENTER to continue..."
+            continue
+          }
+        else
+          echo "📁 Mirror folder already exists."
+        fi
+
+        # ============================================================
+        # CHECK WHETHER Display_Mirror.apk ALREADY EXISTS
+        # ============================================================
+
+        if [[ -f "$MIRROR_APK" && -s "$MIRROR_APK" ]]; then
+          echo
+          echo "✅ Display_Mirror.apk already exists."
+          echo "   Skipping download."
+          echo "📄 Using:"
+          echo "   $MIRROR_APK"
+        else
+          echo
+          echo "📥 Display_Mirror.apk not found."
+          echo "⬇️  Downloading..."
+
+          if command -v curl >/dev/null 2>&1; then
+            curl -L --fail --progress-bar \
+              "$MIRROR_URL" \
+              -o "$MIRROR_APK"
+            DOWNLOAD_STATUS=$?
+          elif command -v wget >/dev/null 2>&1; then
+            wget -O "$MIRROR_APK" "$MIRROR_URL"
+            DOWNLOAD_STATUS=$?
+          else
+            echo "❌ Neither curl nor wget is installed."
+            read -r -p "Press ENTER to continue..."
+            continue
+          fi
+
+          if [[ $DOWNLOAD_STATUS -ne 0 || ! -s "$MIRROR_APK" ]]; then
+            echo
+            echo "❌ Download failed."
+            rm -f "$MIRROR_APK"
+            read -r -p "Press ENTER to continue..."
+            continue
+          fi
+
+          echo
+          echo "✅ Download completed."
+          echo "📄 Saved to:"
+          echo "   $MIRROR_APK"
+        fi
+
+        echo
+
+        echo "🔍 Checking connected device..."
+        select_device || {
+          echo "❌ No device selected. File was downloaded successfully."
+          read -r -p "Press ENTER to continue..."
+          continue
+        }
+
+        wait_for_adb
+
+        echo "📦 Installing Display Mirror..."
+        echo
+
+        # Requested installation method: adb -d install -g
+        if $ADB -d install -g "$MIRROR_APK"; then
+          echo
+          echo "✅ Display Mirror installed successfully."
+        else
+          echo
+          echo "❌ Display Mirror installation failed."
+          echo "📄 APK: $MIRROR_APK"
+        fi
+
+        echo
+        disconnect_if_wireless
+        read -r -p "Press ENTER to continue..."
+        ;;
+
+      0)
+        return
+        ;;
+
+      *)
+        echo
+        echo "✗ Invalid option."
+        sleep 1
+        ;;
+
+    esac
   done
-
-  for user in $(ADB_CMD shell pm list users | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2); do
-    echo "Restarting Launcher for user $user..."
-    ADB_CMD shell am start --user "$user" -n com.roxmotor.nonpreinstallapp/com.roxmotor.nonpreinstallapp.MainActivity2 || true
-    ADB_CMD shell am force-stop --user "$user" qa.essa.elauncher
-    ADB_CMD shell am start --user "$user" -n qa.essa.elauncher/.MainActivity
-  done
-
-  set_permissions
-
-  echo "✅ Installed Successfully"
-  disconnect_if_wireless
 }
 
 Rox-Unlock() {
@@ -4081,13 +4222,13 @@ Activa_Dashboard() {
 
         echo
         echo "╔══════════════════════════════════════════════════════════════╗"
-        echo "║              ✅ ACTIVA DASHBOARD READY                     ║"
+        echo "║                ✅ ACTIVA DASHBOARD READY                     ║"
         echo "╠══════════════════════════════════════════════════════════════╣"
-        echo "║ XMod Installer installed                                    ║"
+        echo "║ XMod Installer installed                                     ║"
         echo "║ Root ADB verified                                            ║"
-        echo "║ Permissions granted                                         ║"
-        echo "║ RootCommandDaemon running                                   ║"
-        echo "║ Root channel ready                                          ║"
+        echo "║ Permissions granted                                          ║"
+        echo "║ RootCommandDaemon running                                    ║"
+        echo "║ Root channel ready                                           ║"
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo
 
