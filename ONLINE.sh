@@ -1108,6 +1108,7 @@ Rox-Unlock() {
 
         ADB_CMD shell pm clear --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
         ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp
 
         echo "      ✓ Done"
     done
