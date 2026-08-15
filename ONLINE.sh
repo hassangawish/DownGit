@@ -147,257 +147,6 @@ wait_for_adb() {
   $ADB -s "$TARGET_DEVICE" wait-for-device || true
 }
 
-# install_apk_safe() {
-
-#     local apk="$1"
-#     local pkg=""
-#     local output=""
-#     local link_output=""
-
-#     echo "📦 Installing: $(basename "$apk")"
-
-#     # ============================================================
-#     # GET PACKAGE NAME
-#     # ============================================================
-
-#     pkg=$(get_package_name "$apk")
-
-#     # ============================================================
-#     # ALL USERS MODE
-#     # ============================================================
-
-#     if [[ "$USE_ALL_USERS" == true ]]; then
-
-#         # --------------------------------------------------------
-#         # First install normally on the primary user.
-#         # This makes sure the package exists on the device.
-#         # --------------------------------------------------------
-
-#         output=$(ADB_CMD install -r -d -g --user 0 "$apk" 2>&1)
-
-#         if echo "$output" | grep -q "Success"; then
-#             printf "   👤 User %-3s ✅ Installed\n" "0"
-#         else
-#             printf "   👤 User %-3s ⚠️ Install returned error\n" "0"
-#         fi
-
-#         # --------------------------------------------------------
-#         # If package name wasn't detected from PC tools,
-#         # try to detect it from installed packages.
-#         # --------------------------------------------------------
-
-#         if [[ -z "$pkg" ]]; then
-
-#             if [[ -n "$apk" ]]; then
-
-#                 # Try package name again after installation
-#                 pkg=$(get_package_name "$apk")
-
-#             fi
-#         fi
-
-#         # --------------------------------------------------------
-#         # Show package
-#         # --------------------------------------------------------
-
-#         if [[ -n "$pkg" ]]; then
-#             echo "   📦 Package: $pkg"
-#         else
-#             echo "   ⚠️ Could not determine package name."
-#         fi
-
-#         # --------------------------------------------------------
-#         # Install / link for remaining users
-#         # --------------------------------------------------------
-
-#         for user in $(get_all_users); do
-
-#             # Skip primary user because we already installed it
-#             if [[ "$user" == "0" ]]; then
-#                 continue
-#             fi
-
-#             # ====================================================
-#             # Detect Clone User
-#             # ====================================================
-
-#             USER_INFO=$(
-#                 ADB_CMD shell pm list users 2>/dev/null |
-#                 grep "UserInfo{$user:"
-#             )
-
-#             IS_CLONE=false
-
-#             if echo "$USER_INFO" | grep -qiE "clone|_clone"; then
-#                 IS_CLONE=true
-#             fi
-
-#             # ====================================================
-#             # Normal User
-#             # ====================================================
-
-#             if [[ "$IS_CLONE" == false ]]; then
-
-#                 output=$(
-#                     ADB_CMD install \
-#                         -r \
-#                         -d \
-#                         -g \
-#                         --user "$user" \
-#                         "$apk" 2>&1
-#                 )
-
-#                 if echo "$output" | grep -q "Success"; then
-
-#                     printf "   👤 User %-3s ✅ Installed\n" "$user"
-
-#                 elif echo "$output" | grep -q "INSTALL_FAILED_UPDATE_INCOMPATIBLE"; then
-
-#                     printf "   👤 User %-3s ⚠️ Signature Mismatch\n" "$user"
-
-#                 elif echo "$output" | grep -q "INSTALL_FAILED_VERSION_DOWNGRADE"; then
-
-#                     printf "   👤 User %-3s ⚠️ Version Downgrade\n" "$user"
-
-#                 else
-
-#                     printf "   👤 User %-3s ❌ Failed\n" "$user"
-
-#                 fi
-
-#                 continue
-#             fi
-
-#             # ====================================================
-#             # CLONE USER
-#             # ====================================================
-
-#             echo "   👤 User $user 🔄 Clone detected"
-
-#             if [[ -z "$pkg" ]]; then
-
-#                 printf "   👤 User %-3s ❌ Package Unknown\n" "$user"
-#                 continue
-
-#             fi
-
-#             # ----------------------------------------------------
-#             # Check whether package already exists on device
-#             # ----------------------------------------------------
-
-#             PACKAGE_EXISTS=$(
-#                 ADB_CMD shell pm list packages 2>/dev/null |
-#                 grep -Fx "package:$pkg"
-#             )
-
-#             if [[ -z "$PACKAGE_EXISTS" ]]; then
-
-#                 printf "   👤 User %-3s ❌ Package not available\n" "$user"
-#                 continue
-
-#             fi
-
-#             # ----------------------------------------------------
-#             # Link existing package to clone user
-#             # ----------------------------------------------------
-
-#             link_output=$(
-#                 ADB_CMD shell cmd package install-existing \
-#                     --user "$user" \
-#                     "$pkg" 2>&1
-#             )
-
-#             if echo "$link_output" | grep -qiE \
-#                 "installed for user|already installed"; then
-
-#                 printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
-
-#             else
-
-#                 # ------------------------------------------------
-#                 # Second method: pm install-existing
-#                 # ------------------------------------------------
-
-#                 link_output=$(
-#                     ADB_CMD shell pm install-existing \
-#                         --user "$user" \
-#                         "$pkg" 2>&1
-#                 )
-
-#                 if echo "$link_output" | grep -qiE \
-#                     "installed for user|already installed"; then
-
-#                     printf "   👤 User %-3s ✅ Clone Linked\n" "$user"
-
-#                 else
-
-#                     printf "   👤 User %-3s ❌ Clone Failed\n" "$user"
-
-#                     echo "      Package: $pkg"
-#                     echo "      Error: $link_output"
-
-#                 fi
-
-#             fi
-
-#         done
-
-#         return
-#     fi
-
-#     # ============================================================
-#     # NORMAL INSTALL MODE
-#     # ============================================================
-
-#     output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#     if echo "$output" | grep -q "Success"; then
-
-#         echo "   ✅ Installed"
-#         return
-
-#     fi
-
-#     # ============================================================
-#     # Existing Version / Signature / Downgrade
-#     # ============================================================
-
-#     if echo "$output" | grep -qE \
-#         "INSTALL_FAILED_UPDATE_INCOMPATIBLE|INSTALL_FAILED_VERSION_DOWNGRADE|INSTALL_FAILED_SIGNATURE_MISMATCH"; then
-
-#         echo "🔄 Existing version detected..."
-
-#         if [[ -n "$pkg" ]]; then
-
-#             for user in $(get_all_users); do
-
-#                 ADB_CMD shell pm uninstall \
-#                     --user "$user" \
-#                     "$pkg" >/dev/null 2>&1 || true
-
-#             done
-
-#             output=$(ADB_CMD install -r -d -g "$apk" 2>&1)
-
-#             if echo "$output" | grep -q "Success"; then
-#                 echo "   ✅ Reinstalled"
-#             else
-#                 echo "   ❌ Failed"
-#                 echo "$output"
-#             fi
-
-#         else
-
-#             echo "❌ Couldn't detect package name."
-
-#         fi
-
-#     else
-
-#         echo "$output"
-
-#     fi
-# }
 
 install_apk_safe() {
 
@@ -1060,6 +809,88 @@ simcard() {
   disconnect_if_wireless
 }
 
+BYD() {
+  clear
+
+  while true; do
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                         🚗 BYD TOOLS                         ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║  1. 📱 Install Apps (BYD)                                    ║"
+    echo "║  2. 🔇 Disable Chinese (BYD)                                 ║"
+    echo "║  3. 📶 Activate Sim-Card (BYD)                               ║"
+    echo "║  4. 📱 Install Apps (BYD OLD)                                ║"
+    echo "║  0. ↩️  Back                                                  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    read -r -p "CHOOSE: " BYD_OPTION
+
+    case "$BYD_OPTION" in
+      1) central ;;
+      2) voice ;;
+      3) simcard ;;
+      4) BYD_OLD ;;
+      0) return ;;
+      *) echo "❌ Invalid option!"; sleep 1 ;;
+    esac
+  done
+}
+
+Jetour() {
+  clear
+
+  while true; do
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                       🚗 JETOUR TOOLS                        ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║  1. 📱 Install Apps (Dashing)                                ║"
+    echo "║  2. 📱 Install Apps (Jetour)                                 ║"
+    echo "║  3. 🚙 Install Apps (G700 + AIO)                             ║"
+    echo "║  0. ↩️  Back                                                  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    read -r -p "CHOOSE: " JETOUR_OPTION
+
+    case "$JETOUR_OPTION" in
+      1) dashing ;;
+      2) Jetour_Install ;;
+      3) G700 ;;
+      0) return ;;
+      *) echo "❌ Invalid option!"; sleep 1 ;;
+    esac
+  done
+}
+
+Zeekr() {
+  clear
+
+  while true; do
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║                       🚘 ZEEKR TOOLS                         ║"
+    echo "╠══════════════════════════════════════════════════════════════╣"
+    echo "║  1. 📱 Install Apps (Zeekr)                                  ║"
+    echo "║  2. 📱 Install Apps (Zeeker9X)                               ║"
+    echo "║  3. 🔓 Unlock States (Zeeker9X)                              ║"
+    echo "║  4. 🚀 Activa Dashboard (Zeekr)                              ║"
+    echo "║  0. ↩️  Back                                                  ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo
+
+    read -r -p "CHOOSE: " ZEEKR_OPTION
+
+    case "$ZEEKR_OPTION" in
+      1) zeekr ;;
+      2) Zeekr9x ;;
+      3) Premissions ;;
+      4) Activa_Dashboard ;;
+      0) return ;;
+      *) echo "❌ Invalid option!"; sleep 1 ;;
+    esac
+  done
+}
+
 ROX() {
   clear
 
@@ -1069,6 +900,7 @@ ROX() {
     echo "╠══════════════════════════════════════════════════════════════╣"
     echo "║  1. 📱 Install Apps                                          ║"
     echo "║  2. 📥 Download & Install Display Mirror                     ║"
+    echo "║  9. 🔓 Unlock Screen (rox)                                   ║"
     echo "║  0. ↩️  Back                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo
@@ -1130,7 +962,7 @@ ROX() {
         MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
 
         echo "╔══════════════════════════════════════════════════════════════╗"
-        echo "║              📥 DISPLAY MIRROR DOWNLOADER                    ║"
+        echo "║              📥 DISPLAY MIRROR DOWNLOADER                   ║"
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo
 
@@ -1225,6 +1057,10 @@ ROX() {
         echo
         disconnect_if_wireless
         read -r -p "Press ENTER to continue..."
+        ;;
+
+      9)
+        Rox-Unlock
         ;;
 
       0)
@@ -1431,9 +1267,9 @@ Haval() {
   disconnect_if_wireless
 }
 
-Jetour() {
+Jetour_Install() {
   clear
-  select_device || { echo "Returning to main menu..."; return; }
+  select_device || { echo "Returning to Jetour menu..."; return; }
   wait_for_adb
 
   echo "🚀 Installing Apps on Jetour"
@@ -1859,6 +1695,7 @@ G700() {
         echo "╠══════════════════════════════════════════════════════════════╣"
         echo "║  1. 🔐 Generate G700 Code                                    ║"
         echo "║  2. 📱 Install Apps                                          ║"
+        echo "║  3. 📥 Download & Install Display Mirror                     ║"
         echo "║  0. ↩️  Back                                                  ║"
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo
@@ -1873,6 +1710,109 @@ G700() {
 
             2)
                 G700_INSTALL_APPS
+                ;;
+
+            3)
+                clear
+
+                MIRROR_DIR="$DESKTOP_APK/G700/Mirror"
+                MIRROR_APK="$MIRROR_DIR/Display_Mirror.apk"
+                MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
+
+                echo "╔══════════════════════════════════════════════════════════════╗"
+                echo "║              📥 DISPLAY MIRROR - G700                        ║"
+                echo "╚══════════════════════════════════════════════════════════════╝"
+                echo
+                echo "📁 Target folder:"
+                echo "   $MIRROR_DIR"
+                echo
+
+                # ========================================================
+                # CHECK / CREATE G700/Mirror FOLDER
+                # ========================================================
+
+                if [[ ! -d "$MIRROR_DIR" ]]; then
+                    echo "📁 Mirror folder not found."
+                    echo "📂 Creating:"
+                    echo "   $MIRROR_DIR"
+
+                    mkdir -p "$MIRROR_DIR" || {
+                        echo "❌ Failed to create Mirror folder."
+                        read -r -p "Press ENTER to continue..."
+                        continue
+                    }
+                else
+                    echo "📁 Mirror folder already exists."
+                fi
+
+                # ========================================================
+                # CHECK WHETHER Display_Mirror.apk ALREADY EXISTS
+                # ========================================================
+
+                if [[ -f "$MIRROR_APK" && -s "$MIRROR_APK" ]]; then
+                    echo
+                    echo "✅ Display_Mirror.apk already exists."
+                    echo "   Skipping download."
+                    echo "📄 Using:"
+                    echo "   $MIRROR_APK"
+                else
+                    echo
+                    echo "📥 Display_Mirror.apk not found."
+                    echo "⬇️  Downloading..."
+
+                    if command -v curl >/dev/null 2>&1; then
+                        curl -L --fail --progress-bar                             "$MIRROR_URL"                             -o "$MIRROR_APK"
+                        DOWNLOAD_STATUS=$?
+                    elif command -v wget >/dev/null 2>&1; then
+                        wget -O "$MIRROR_APK" "$MIRROR_URL"
+                        DOWNLOAD_STATUS=$?
+                    else
+                        echo "❌ Neither curl nor wget is installed."
+                        read -r -p "Press ENTER to continue..."
+                        continue
+                    fi
+
+                    if [[ $DOWNLOAD_STATUS -ne 0 || ! -s "$MIRROR_APK" ]]; then
+                        echo
+                        echo "❌ Download failed."
+                        rm -f "$MIRROR_APK"
+                        read -r -p "Press ENTER to continue..."
+                        continue
+                    fi
+
+                    echo
+                    echo "✅ Download completed."
+                    echo "📄 Saved to:"
+                    echo "   $MIRROR_APK"
+                fi
+
+                echo
+                echo "🔍 Checking connected device..."
+
+                select_device || {
+                    echo "❌ No device selected. File was downloaded successfully."
+                    read -r -p "Press ENTER to continue..."
+                    continue
+                }
+
+                wait_for_adb
+
+                echo
+                echo "📦 Installing Display Mirror on G700..."
+                echo
+
+                if $ADB -d install -g "$MIRROR_APK"; then
+                    echo
+                    echo "✅ Display Mirror installed successfully on G700."
+                else
+                    echo
+                    echo "❌ Display Mirror installation failed."
+                    echo "📄 APK: $MIRROR_APK"
+                fi
+
+                echo
+                disconnect_if_wireless
+                read -r -p "Press ENTER to continue..."
                 ;;
 
             0)
@@ -3225,498 +3165,6 @@ PY
 }
 
 # ============================================================
-# XMOD / ACTIVA DASHBOARD
-# ============================================================
-
-# Activa_Dashboard() {
-
-#     clear
-
-#     echo
-#     echo "╔══════════════════════════════════════════════════════════════╗"
-#     echo "║                    🚀 ACTIVA DASHBOARD                      ║"
-#     echo "╠══════════════════════════════════════════════════════════════╣"
-#     echo "║              XMod Installer / Dashboard Setup               ║"
-#     echo "╚══════════════════════════════════════════════════════════════╝"
-#     echo
-
-#     # ============================================================
-#     # PATHS
-#     # ============================================================
-
-#     local X9_DIR="$USER_HOME/Desktop/9x"
-
-#     # APK used for the XMod installation/bootstrap
-#     local XMOD_INSTALLER="$X9_DIR/Install/XModInstaller.apk"
-
-#     # Dashboard APK - change this folder/name if needed
-#     local DASHBOARD_DIR="$X9_DIR/Dashboard"
-#     local DASHBOARD_APK="$DASHBOARD_DIR/Dashboard.apk"
-
-#     echo "📁 X9 Directory:"
-#     echo "   $X9_DIR"
-#     echo
-
-#     echo "📦 XMod Installer:"
-#     echo "   $XMOD_INSTALLER"
-#     echo
-
-#     echo "📱 Dashboard:"
-#     echo "   $DASHBOARD_APK"
-#     echo
-
-#     # ============================================================
-#     # CHECK FILES
-#     # ============================================================
-
-#     if [[ ! -d "$X9_DIR" ]]; then
-#         echo "❌ 9x folder not found:"
-#         echo "   $X9_DIR"
-#         return 1
-#     fi
-
-#     if [[ ! -f "$XMOD_INSTALLER" ]]; then
-#         echo "❌ XModInstaller.apk not found:"
-#         echo "   $XMOD_INSTALLER"
-#         return 1
-#     fi
-
-#     if [[ ! -f "$DASHBOARD_APK" ]]; then
-#         echo "❌ Dashboard APK not found:"
-#         echo "   $DASHBOARD_APK"
-#         return 1
-#     fi
-
-#     echo "✅ Required files found."
-#     echo
-
-#     # ============================================================
-#     # SELECT DEVICE
-#     # ============================================================
-
-#     select_device || {
-#         echo "❌ No device selected."
-#         return 1
-#     }
-
-#     wait_for_adb
-
-#     echo
-#     echo "📱 Device:"
-#     echo "   $TARGET_DEVICE"
-#     echo
-
-#     # ============================================================
-#     # VERIFY ADB ROOT
-#     # ============================================================
-
-#     echo "🔐 Checking ADB root..."
-
-#     local ROOT_ID
-#     ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
-
-#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
-#         echo "⚠️ ADB is not currently root."
-#         echo
-#         echo "Attempting adb root..."
-
-#         ADB_CMD root >/dev/null 2>&1 || true
-
-#         sleep 2
-#         wait_for_adb
-
-#         ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
-#     fi
-
-#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
-#         echo
-#         echo "❌ ADB root is required for XMod bootstrap."
-#         echo "   Current identity:"
-#         echo "   $ROOT_ID"
-#         echo
-#         return 1
-#     fi
-
-#     echo "✅ ADB root confirmed."
-#     echo
-
-#     # ============================================================
-#     # INSTALL XMOD INSTALLER
-#     # ============================================================
-
-#     echo "📦 Installing XMod Installer..."
-#     echo
-
-#     if ! ADB_CMD install -r "$XMOD_INSTALLER"; then
-#         echo
-#         echo "❌ Failed to install XModInstaller.apk"
-#         return 1
-#     fi
-
-#     echo
-#     echo "✅ XMod Installer installed."
-#     echo
-
-#     # ============================================================
-#     # GET PACKAGE NAME
-#     # ============================================================
-
-#     local XMOD_PKG="com.xmod.customs.installer"
-
-#     echo "🔎 Checking XMod package..."
-
-#     if ! ADB_CMD shell pm path "$XMOD_PKG" >/dev/null 2>&1; then
-#         echo "❌ XMod Installer package was not found:"
-#         echo "   $XMOD_PKG"
-#         return 1
-#     fi
-
-#     echo "✅ Package detected:"
-#     echo "   $XMOD_PKG"
-#     echo
-
-#     # ============================================================
-#     # GRANT REQUIRED PERMISSIONS
-#     # ============================================================
-
-#     echo "🔐 Applying XMod permissions..."
-
-#     ADB_CMD shell pm grant \
-#         "$XMOD_PKG" \
-#         android.permission.ACCESS_COARSE_LOCATION \
-#         2>/dev/null || true
-
-#     ADB_CMD shell pm grant \
-#         "$XMOD_PKG" \
-#         android.permission.ACCESS_FINE_LOCATION \
-#         2>/dev/null || true
-
-#     ADB_CMD shell appops set \
-#         "$XMOD_PKG" \
-#         COARSE_LOCATION \
-#         allow \
-#         2>/dev/null || true
-
-#     ADB_CMD shell appops set \
-#         "$XMOD_PKG" \
-#         FINE_LOCATION \
-#         allow \
-#         2>/dev/null || true
-
-#     ADB_CMD shell appops set \
-#         "$XMOD_PKG" \
-#         REQUEST_INSTALL_PACKAGES \
-#         allow \
-#         2>/dev/null || true
-
-#     echo "✅ Required permissions applied."
-#     echo
-
-#     # ============================================================
-#     # LAUNCH XMOD INSTALLER
-#     # ============================================================
-
-#     echo "🚀 Launching XMod Installer..."
-
-#     ADB_CMD shell am start \
-#         -n "$XMOD_PKG/.MainActivity" \
-#         >/dev/null 2>&1 || true
-
-#     sleep 2
-
-#     # ============================================================
-#     # INSTALL DASHBOARD
-#     # ============================================================
-
-#     echo
-#     echo "📱 Installing Activa Dashboard..."
-#     echo
-
-#     if ! ADB_CMD install -r "$DASHBOARD_APK"; then
-#         echo
-#         echo "❌ Failed to install Dashboard APK."
-#         return 1
-#     fi
-
-#     echo
-#     echo "✅ Dashboard installed successfully."
-#     echo
-
-#     # ============================================================
-#     # DETECT DASHBOARD PACKAGE
-#     # ============================================================
-
-#     local DASHBOARD_PKG
-#     DASHBOARD_PKG=$(get_package_name "$DASHBOARD_APK")
-
-#     if [[ -z "$DASHBOARD_PKG" ]]; then
-#         echo "⚠️ Could not automatically detect Dashboard package."
-#         echo "   APK was installed successfully."
-#     else
-#         echo "📦 Dashboard package:"
-#         echo "   $DASHBOARD_PKG"
-#         echo
-
-#         echo "🚀 Launching Dashboard..."
-
-#         ADB_CMD shell monkey \
-#             -p "$DASHBOARD_PKG" \
-#             1 >/dev/null 2>&1 || true
-#     fi
-
-#     echo
-#     echo "╔══════════════════════════════════════════════════════════════╗"
-#     echo "║              ✅ ACTIVA DASHBOARD READY                      ║"
-#     echo "╚══════════════════════════════════════════════════════════════╝"
-#     echo
-
-#     disconnect_if_wireless
-# }
-
-# ============================================================
-# ACTIVA DASHBOARD (ZEEKR)
-# ============================================================
-
-# Activa_Dashboard() {
-
-#     clear
-
-#     echo
-#     echo "╔══════════════════════════════════════════════════════════════╗"
-#     echo "║              🚀 ACTIVA DASHBOARD (ZEEKR)                     ║"
-#     echo "╠══════════════════════════════════════════════════════════════╣"
-#     echo "║          XMod Bootstrap + Dashboard Installation             ║"
-#     echo "╚══════════════════════════════════════════════════════════════╝"
-#     echo
-
-#     # ============================================================
-#     # XMOD DIRECTORY
-#     # ============================================================
-
-#     local XMOD_DIR="$DESKTOP_APK/9X/Dashboard"
-
-#     echo "📁 Apps directory:"
-#     echo "   $XMOD_DIR"
-#     echo
-
-#     if [[ ! -d "$XMOD_DIR" ]]; then
-#         echo "❌ Folder not found:"
-#         echo "   $XMOD_DIR"
-#         return 1
-#     fi
-
-#     # ============================================================
-#     # FIND ALL APK FILES
-#     # ============================================================
-
-#     local APK_FILES=()
-
-#     while IFS= read -r -d '' apk; do
-#         APK_FILES+=("$apk")
-#     done < <(find "$XMOD_DIR" -type f \( -iname "*.apk" \) -print0)
-
-#     if [[ ${#APK_FILES[@]} -eq 0 ]]; then
-#         echo "❌ No APK files found in:"
-#         echo "   $XMOD_DIR"
-#         return 1
-#     fi
-
-#     echo "📦 APKs found: ${#APK_FILES[@]}"
-#     echo
-
-#     for apk in "${APK_FILES[@]}"; do
-#         echo "   • $(basename "$apk")"
-#     done
-
-#     echo
-
-#     # ============================================================
-#     # SELECT DEVICE
-#     # ============================================================
-
-#     select_device || {
-#         echo "❌ No device selected."
-#         return 1
-#     }
-
-#     wait_for_adb
-
-#     echo
-#     echo "📱 Device: $TARGET_DEVICE"
-#     echo
-
-#     # ============================================================
-#     # VERIFY ROOT
-#     # ============================================================
-
-#     echo "🔐 Checking ADB root..."
-
-#     local ROOT_ID
-#     ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
-
-#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
-
-#         echo "⚠️ ADB is not root."
-#         echo "🔄 Attempting adb root..."
-
-#         ADB_CMD root >/dev/null 2>&1 || true
-
-#         sleep 2
-#         wait_for_adb
-
-#         ROOT_ID=$(ADB_CMD shell id 2>/dev/null | tr -d '\r')
-#     fi
-
-#     if [[ "$ROOT_ID" != *"uid=0"* ]]; then
-#         echo
-#         echo "❌ ADB root is required."
-#         echo "   Current identity:"
-#         echo "   $ROOT_ID"
-#         return 1
-#     fi
-
-#     echo "✅ ADB root confirmed."
-#     echo
-
-#     # ============================================================
-#     # INSTALL ALL APKS
-#     # ============================================================
-
-#     echo "📦 Installing all APKs from 9X..."
-#     echo
-
-#     local INSTALLED_COUNT=0
-#     local FAILED_COUNT=0
-
-#     for apk in "${APK_FILES[@]}"; do
-
-#         echo "──────────────────────────────────────────────────────────────"
-#         echo "📦 Installing: $(basename "$apk")"
-#         echo
-
-#         if ADB_CMD install -r "$apk"; then
-#             echo "✅ Installed: $(basename "$apk")"
-#             ((INSTALLED_COUNT++))
-#         else
-#             echo "❌ Failed: $(basename "$apk")"
-#             ((FAILED_COUNT++))
-#         fi
-
-#         echo
-#     done
-
-#     echo "──────────────────────────────────────────────────────────────"
-#     echo
-#     echo "📊 Installation Summary"
-#     echo "   ✅ Installed : $INSTALLED_COUNT"
-#     echo "   ❌ Failed    : $FAILED_COUNT"
-#     echo
-
-#     if [[ "$INSTALLED_COUNT" -eq 0 ]]; then
-#         echo "❌ No applications were installed."
-#         return 1
-#     fi
-
-#     # ============================================================
-#     # XMOD INSTALLER PACKAGE
-#     # ============================================================
-
-#     local XMOD_PKG="com.xmod.customs.installer"
-
-#     echo "🔎 Checking XMod Installer..."
-
-#     if ADB_CMD shell pm path "$XMOD_PKG" >/dev/null 2>&1; then
-
-#         echo "✅ XMod Installer detected."
-#         echo
-
-#         # --------------------------------------------------------
-#         # REQUIRED PERMISSIONS
-#         # --------------------------------------------------------
-
-#         echo "🔐 Applying XMod permissions..."
-
-#         ADB_CMD shell pm grant \
-#             "$XMOD_PKG" \
-#             android.permission.ACCESS_COARSE_LOCATION \
-#             2>/dev/null || true
-
-#         ADB_CMD shell pm grant \
-#             "$XMOD_PKG" \
-#             android.permission.ACCESS_FINE_LOCATION \
-#             2>/dev/null || true
-
-#         ADB_CMD shell appops set \
-#             "$XMOD_PKG" \
-#             COARSE_LOCATION \
-#             allow \
-#             2>/dev/null || true
-
-#         ADB_CMD shell appops set \
-#             "$XMOD_PKG" \
-#             FINE_LOCATION \
-#             allow \
-#             2>/dev/null || true
-
-#         ADB_CMD shell appops set \
-#             "$XMOD_PKG" \
-#             REQUEST_INSTALL_PACKAGES \
-#             allow \
-#             2>/dev/null || true
-
-#         echo "✅ XMod permissions applied."
-#         echo
-
-#     else
-
-#         echo "⚠️ XMod Installer package not found:"
-#         echo "   $XMOD_PKG"
-#         echo
-#         echo "The other APKs were installed normally."
-#         echo
-
-#     fi
-
-#     # ============================================================
-#     # LAUNCH XMOD INSTALLER
-#     # ============================================================
-
-#     if ADB_CMD shell pm path "$XMOD_PKG" >/dev/null 2>&1; then
-
-#         echo "🚀 Starting XMod Installer..."
-
-#         ADB_CMD shell am start \
-#             -n "$XMOD_PKG/.MainActivity" \
-#             >/dev/null 2>&1 || true
-
-#         sleep 2
-
-#         echo "✅ XMod Installer started."
-#         echo
-#     fi
-
-#     # ============================================================
-#     # SHOW INSTALLED PACKAGES
-#     # ============================================================
-
-#     echo "📱 Installed XMod-related packages:"
-#     echo
-
-#     ADB_CMD shell pm list packages 2>/dev/null |
-#         grep -Ei 'xmod|activa|dashboard' |
-#         sed 's/^/   /'
-
-#     echo
-
-#     echo "╔══════════════════════════════════════════════════════════════╗"
-#     echo "║              ✅ ACTIVA DASHBOARD COMPLETED                   ║"
-#     echo "╚══════════════════════════════════════════════════════════════╝"
-#     echo
-
-#     disconnect_if_wireless
-# }
-
-# ============================================================
 # ACTIVA DASHBOARD (ZEEKR)
 # ============================================================
 
@@ -4268,27 +3716,18 @@ menu() {
     echo "║       💻 BEST STORE AIO Sript (BY: Hassan Gawish) 💻         ║"
     echo "║     Advanced ADB Installer for Chinese Car Head Units        ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
-    echo "║  1. 📱 Install Apps (BYD)                                    ║"
-    echo "║  2. 🔇 Disable Chinese (BYD)                                 ║"
-    echo "║  3. 📶 Activate Sim-Card (BYD)                               ║"
-    echo "║  4. 📱 Install Apps (rox)                                    ║"
-    echo "║  5. 📱 Install Apps (Zeekr)                                  ║"
-    echo "║  6. 📱 Install Apps (Dashing)                                ║"
-    echo "║  7. 📱 Install Apps (LiAuto)                                 ║"
-    echo "║  8. 📱 Install Apps (Haval)                                  ║"
-    echo "║  9. 🔓 Unlock Screen (rox)                                   ║"
-    echo "║ 10. 📱 Install Apps (Jetour)                                 ║"
-    echo "║ 11. 🚙 Install Apps (G700 + AIO)                             ║"
-    echo "║ 12. 📱 Install Apps (LYNK&CO)                                ║"
-    echo "║ 13. 📱 Install Apps (Zeeker9X)                               ║"
-    echo "║ 14. 🔓 Unlock States (Zeeker9X)                              ║"
-    echo "║ 15. 📱 Install Apps (Leepmotor)                              ║"
-    echo "║ 16. 📱 Install Apps (BYD_OLD)                                ║"
-    echo "║ 17. 📱 Install Apps (AVATR)                                  ║"
-    echo "║ 18. 📱 Install Apps (VOYAH)                                  ║"
-    echo "║ 19. 📱 Install Apps (ICAR)                                   ║"
-    echo "║ 20. 🚗 Deepal Tools (S07 / S03 / L07)                        ║"
-    echo "║ 21. 🚀 Activa Dashboard (Zeekr)                              ║"
+    echo "║  1. 🚗 BYD Special Tools                                     ║"
+    echo "║  2. 🚙 ROX Special Tools                                     ║"
+    echo "║  3. 🚘 Zeekr Special Tools                                   ║"
+    echo "║  4. 🚗 Jetour Special Tools                                  ║"
+    echo "║  5. 📱 Install Apps (LiAuto)                                 ║"
+    echo "║  6. 📱 Install Apps (Haval)                                  ║"
+    echo "║  7. 📱 Install Apps (Leepmotor)                              ║"
+    echo "║  8. 📱 Install Apps (AVATR)                                  ║"
+    echo "║  9. 📱 Install Apps (VOYAH)                                  ║"
+    echo "║ 10. 📱 Install Apps (ICAR)                                   ║"
+    echo "║ 11. 📱 Install Apps (LYNK&CO)                                ║"
+    echo "║ 12. 🚗 Deepal Tools (S07 / S03 / L07)                        ║"
     echo "║ 99. 📦 Dump All Apps (Latest)                                ║"
     echo "║  0. 🚪 Exit & Close Terminal                                 ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
@@ -4296,27 +3735,18 @@ menu() {
     read -r opt
 
     case "$opt" in
-      1) central ;;
-      2) voice ;;
-      3) simcard ;;
-      4) ROX ;;
-      5) zeekr ;;
-      6) dashing ;;
-      7) lixiang ;;
-      8) Haval ;;
-      9) Rox-Unlock ;;
-      10) Jetour ;;
-      11) G700 ;;
-      12) LYNK ;;
-      13) Zeekr9x ;;
-      14) Premissions ;;
-      15) Leapmotor ;;
-      16) BYD_OLD ;;
-      17) AVATR ;;
-      18) VOYAH ;;
-      19) ICAR ;;
-      20) Deepal73 ;;
-      21) Activa_Dashboard ;;
+      1) BYD ;;
+      2) ROX ;;
+      3) Zeekr ;;
+      4) Jetour ;;
+      5) lixiang ;;
+      6) Haval ;;
+      7) Leapmotor ;;
+      8) AVATR ;;
+      9) VOYAH ;;
+      10) ICAR ;;
+      11) LYNK ;;
+      12) Deepal73 ;;
       99) Dump_Apps ;;
       0)
         echo "👋 Closing Terminal..."
