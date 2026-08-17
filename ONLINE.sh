@@ -2277,7 +2277,7 @@ G700() {
 
                 echo
                 echo "╔══════════════════════════════════════════════════════════════╗"
-                echo "║             ✅ DISPLAY MIRROR SETUP COMPLETE                ║"
+                echo "║             ✅ DISPLAY MIRROR SETUP COMPLETE                 ║"
                 echo "╠══════════════════════════════════════════════════════════════╣"
                 echo "║                                                              ║"
                 echo "║  📦 Package:                                                 ║"
@@ -2294,8 +2294,8 @@ G700() {
                 echo "║     ✓ WRITE_EXTERNAL_STORAGE                                 ║"
                 echo "║     ✓ SYSTEM_ALERT_WINDOW                                    ║"
                 echo "║                                                              ║"
-                echo "║  ⚙️  System:                                                 ║"
-                echo "║     ✓ Battery Optimization Whitelist                        ║"
+                echo "║  ⚙️  System:                                                  ║"
+                echo "║     ✓ Battery Optimization Whitelist                         ║"
                 echo "║     ✓ BootReceiver Enabled                                   ║"
                 echo "║                                                              ║"
                 echo "║  🔑 ADB:                                                     ║"
