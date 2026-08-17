@@ -1722,10 +1722,15 @@ G700() {
 
                 MIRROR_DIR="$DESKTOP_APK/G700/Mirror"
                 MIRROR_APK="$MIRROR_DIR/Display_Mirror.apk"
+
+                # Hidden download URL - not displayed during installation
                 MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
 
                 MIRROR_PACKAGE="com.example.displaymirror"
                 MIRROR_ACTIVITY="$MIRROR_PACKAGE/.MainActivity"
+
+                ADBKEY="$HOME/.android/adbkey"
+                ADBKEY_PUB="$HOME/.android/adbkey.pub"
 
                 echo "╔══════════════════════════════════════════════════════════════╗"
                 echo "║              📥 DISPLAY MIRROR - G700                        ║"
@@ -1739,7 +1744,7 @@ G700() {
                 echo
 
                 # ========================================================
-                # SELECT DEVICE FIRST
+                # SELECT DEVICE
                 # ========================================================
 
                 echo "🔍 Checking connected device..."
@@ -1762,24 +1767,22 @@ G700() {
                 echo
 
                 # ========================================================
-                # DELETE OLD INSTALLED DISPLAY MIRROR
+                # DELETE OLD INSTALLED APPLICATION
                 # ========================================================
 
-                echo "🔍 Checking if Display Mirror is already installed..."
+                echo "🔍 Checking existing Display Mirror..."
 
                 if $ADB shell pm list packages 2>/dev/null | \
                     grep -q "^package:$MIRROR_PACKAGE$"; then
 
                     echo
-                    echo "⚠️  Display Mirror is already installed on G700."
-                    echo "🗑️  Removing old installed application..."
+                    echo "⚠️  Display Mirror is already installed."
+                    echo "🗑️  Removing old application..."
 
                     if $ADB shell pm uninstall "$MIRROR_PACKAGE" \
                         >/dev/null 2>&1; then
 
-                    ADB_CMD shell pm uninstall com.roxmotor.nonpreinstallapp
-
-                        echo "✅ Old Display Mirror removed successfully."
+                        echo "✅ Old Display Mirror removed."
 
                     else
 
@@ -1794,12 +1797,12 @@ G700() {
 
                 else
 
-                    echo "ℹ️  Display Mirror is not installed on G700."
+                    echo "ℹ️  Display Mirror is not installed."
 
                 fi
 
                 # ========================================================
-                # CHECK / CREATE MIRROR FOLDER
+                # CREATE MIRROR FOLDER
                 # ========================================================
 
                 echo
@@ -1807,13 +1810,11 @@ G700() {
 
                 if [[ ! -d "$MIRROR_DIR" ]]; then
 
-                    echo "📁 Mirror folder not found."
-                    echo "📂 Creating folder..."
+                    echo "📂 Creating Mirror folder..."
 
                     mkdir -p "$MIRROR_DIR" || {
 
                         echo "❌ Failed to create Mirror folder."
-
                         read -r -p "Press ENTER to continue..."
                         continue
 
@@ -1828,7 +1829,7 @@ G700() {
                 fi
 
                 # ========================================================
-                # DELETE OLD APK FROM COMPUTER
+                # DELETE OLD APK
                 # ========================================================
 
                 echo
@@ -1836,13 +1837,11 @@ G700() {
 
                 if [[ -f "$MIRROR_APK" ]]; then
 
-                    echo "📄 Old APK found:"
-                    echo "   $MIRROR_APK"
+                    echo "📄 Old APK found."
 
                     rm -f "$MIRROR_APK" || {
 
                         echo "❌ Failed to delete old APK."
-
                         read -r -p "Press ENTER to continue..."
                         continue
 
@@ -1862,12 +1861,11 @@ G700() {
 
                 echo
                 echo "╔══════════════════════════════════════════════════════════════╗"
-                echo "║                  📥 DOWNLOADING NEW APK                      ║"
+                echo "║                  📥 DOWNLOADING APK                          ║"
                 echo "╚══════════════════════════════════════════════════════════════╝"
                 echo
 
-                echo "🌐 URL:"
-                echo "   $MIRROR_URL"
+                echo "📥 Downloading latest Display Mirror..."
                 echo
 
                 DOWNLOAD_STATUS=1
@@ -1893,7 +1891,6 @@ G700() {
                 else
 
                     echo "❌ Neither curl nor wget is installed."
-
                     read -r -p "Press ENTER to continue..."
                     continue
 
@@ -1916,13 +1913,10 @@ G700() {
                 fi
 
                 echo
-                echo "✅ New Display_Mirror.apk downloaded successfully."
-                echo
-                echo "📄 Saved to:"
-                echo "   $MIRROR_APK"
+                echo "✅ Download completed."
 
                 # ========================================================
-                # INSTALL NEW APK
+                # INSTALL APK
                 # ========================================================
 
                 echo
@@ -2035,7 +2029,7 @@ G700() {
                 echo "   ✅ Done"
 
                 # ========================================================
-                # BATTERY OPTIMIZATION WHITELIST
+                # BATTERY OPTIMIZATION
                 # ========================================================
 
                 echo
@@ -2045,7 +2039,7 @@ G700() {
                     +"$MIRROR_PACKAGE" \
                     2>/dev/null || true
 
-                echo "   ✅ Battery optimization whitelist applied."
+                echo "   ✅ Battery whitelist applied."
 
                 # ========================================================
                 # ENABLE BOOT RECEIVER
@@ -2061,7 +2055,144 @@ G700() {
                 echo "   ✅ BootReceiver enabled."
 
                 # ========================================================
-                # VERIFY INSTALLATION
+                # ADB KEY SETUP
+                # ========================================================
+
+                echo
+                echo "╔══════════════════════════════════════════════════════════════╗"
+                echo "║                    🔑 ADB KEY SETUP                          ║"
+                echo "╚══════════════════════════════════════════════════════════════╝"
+                echo
+
+                if [[ ! -f "$ADBKEY" || ! -f "$ADBKEY_PUB" ]]; then
+
+                    echo "⚠️  ADB keys not found."
+                    echo
+                    echo "Expected:"
+                    echo "   $ADBKEY"
+                    echo "   $ADBKEY_PUB"
+                    echo
+                    echo "Generate them with:"
+                    echo "   adb keygen ~/.android/adbkey"
+                    echo
+
+                else
+
+                    echo "✅ Local ADB keys found."
+
+                    # ====================================================
+                    # ENABLE ADB TCP/IP
+                    # ====================================================
+
+                    echo
+                    echo "▶ Enabling ADB TCP/IP..."
+
+                    $ADB tcpip 5555 2>/dev/null || true
+
+                    echo "   ✅ TCP/IP 5555 enabled."
+
+                    # ====================================================
+                    # PUSH PRIVATE KEY
+                    # ====================================================
+
+                    echo
+                    echo "▶ Pushing adbkey..."
+
+                    if $ADB push \
+                        "$ADBKEY" \
+                        /data/local/tmp/adbkey \
+                        >/dev/null 2>&1; then
+
+                        echo "   ✅ adbkey pushed."
+
+                    else
+
+                        echo "   ⚠️  Failed to push adbkey."
+
+                    fi
+
+                    # ====================================================
+                    # PUSH PUBLIC KEY
+                    # ====================================================
+
+                    echo
+                    echo "▶ Pushing adbkey.pub..."
+
+                    if $ADB push \
+                        "$ADBKEY_PUB" \
+                        /data/local/tmp/adbkey.pub \
+                        >/dev/null 2>&1; then
+
+                        echo "   ✅ adbkey.pub pushed."
+
+                    else
+
+                        echo "   ⚠️  Failed to push adbkey.pub."
+
+                    fi
+
+                    # ====================================================
+                    # CREATE APP FILES DIRECTORY
+                    # ====================================================
+
+                    echo
+                    echo "▶ Preparing Display Mirror files..."
+
+                    if $ADB shell run-as "$MIRROR_PACKAGE" \
+                        mkdir -p ./files \
+                        2>/dev/null; then
+
+                        echo "   ✅ App files directory ready."
+
+                    else
+
+                        echo "   ⚠️  Could not create app files directory."
+                        echo "      run-as may not be permitted."
+
+                    fi
+
+                    # ====================================================
+                    # COPY PRIVATE KEY
+                    # ====================================================
+
+                    echo
+                    echo "▶ Installing adbkey inside Display Mirror..."
+
+                    if $ADB shell run-as "$MIRROR_PACKAGE" \
+                        cp /data/local/tmp/adbkey ./files/adbkey \
+                        2>/dev/null; then
+
+                        echo "   ✅ adbkey installed."
+
+                    else
+
+                        echo "   ⚠️  Failed to install adbkey."
+
+                    fi
+
+                    # ====================================================
+                    # COPY PUBLIC KEY
+                    # ====================================================
+
+                    echo
+                    echo "▶ Installing adbkey.pub inside Display Mirror..."
+
+                    if $ADB shell run-as "$MIRROR_PACKAGE" \
+                        cp /data/local/tmp/adbkey.pub ./files/adbkey.pub \
+                        2>/dev/null; then
+
+                        echo "   ✅ adbkey.pub installed."
+
+                    else
+
+                        echo "   ⚠️  Failed to install adbkey.pub."
+
+                    fi
+
+                fi
+
+                # ========================================================
+                # VERIFY PACKAGE
                 # ========================================================
 
                 echo
@@ -2122,12 +2253,31 @@ G700() {
                     || true
 
                 # ========================================================
+                # VERIFY ADB KEYS
+                # ========================================================
+
+                echo
+                echo "🔍 Verifying ADB keys inside Display Mirror..."
+
+                if $ADB shell run-as "$MIRROR_PACKAGE" \
+                    ls -l ./files/adbkey ./files/adbkey.pub \
+                    2>/dev/null; then
+
+                    echo "   ✅ ADB keys are inside the application."
+
+                else
+
+                    echo "   ⚠️  ADB keys were not found inside the application."
+
+                fi
+
+                # ========================================================
                 # FINAL STATUS
                 # ========================================================
 
                 echo
                 echo "╔══════════════════════════════════════════════════════════════╗"
-                echo "║             ✅ DISPLAY MIRROR SETUP COMPLETE                 ║"
+                echo "║             ✅ DISPLAY MIRROR SETUP COMPLETE                ║"
                 echo "╠══════════════════════════════════════════════════════════════╣"
                 echo "║                                                              ║"
                 echo "║  📦 Package:                                                 ║"
@@ -2144,9 +2294,15 @@ G700() {
                 echo "║     ✓ WRITE_EXTERNAL_STORAGE                                 ║"
                 echo "║     ✓ SYSTEM_ALERT_WINDOW                                    ║"
                 echo "║                                                              ║"
-                echo "║  ⚙️  System:                                                  ║"
-                echo "║     ✓ Battery Optimization Whitelist                         ║"
+                echo "║  ⚙️  System:                                                 ║"
+                echo "║     ✓ Battery Optimization Whitelist                        ║"
                 echo "║     ✓ BootReceiver Enabled                                   ║"
+                echo "║                                                              ║"
+                echo "║  🔑 ADB:                                                     ║"
+                echo "║     ✓ TCP/IP 5555                                            ║"
+                echo "║     ✓ adbkey pushed                                          ║"
+                echo "║     ✓ adbkey.pub pushed                                      ║"
+                echo "║     ✓ Keys copied to app files/                              ║"
                 echo "║                                                              ║"
                 echo "╚══════════════════════════════════════════════════════════════╝"
                 echo
