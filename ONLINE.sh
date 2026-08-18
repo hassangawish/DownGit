@@ -845,8 +845,9 @@ Jetour() {
     echo "║                       🚗 JETOUR TOOLS                        ║"
     echo "╠══════════════════════════════════════════════════════════════╣"
     echo "║  1. 📱 Install Apps (Dashing)                                ║"
-    echo "║  2. 📱 Install Apps (Jetour)                                 ║"
+    echo "║  2. 📱 Install Apps (Jetour T2)                              ║"
     echo "║  3. 🚙 Install Apps (G700 + AIO)                             ║"
+    echo "║  4. 🔐 Jetour T2 ADB Password                                ║"
     echo "║  0. ↩️  Back                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo
@@ -854,11 +855,66 @@ Jetour() {
     read -r -p "CHOOSE: " JETOUR_OPTION
 
     case "$JETOUR_OPTION" in
-      1) dashing ;;
-      2) Jetour_Install ;;
-      3) G700 ;;
-      0) return ;;
-      *) echo "❌ Invalid option!"; sleep 1 ;;
+      1)
+        dashing
+        ;;
+
+      2)
+        Jetour_Install
+        ;;
+
+      3)
+        G700
+        ;;
+
+      4)
+        clear
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                 🔐 JETOUR T2 ADB PASSWORD                    ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        read -r -p "Enter last 7 digits: " JETOUR_ID
+
+        # Remove leading/trailing spaces
+        JETOUR_ID="$(echo "$JETOUR_ID" | tr -d '[:space:]')"
+
+        # Validate exactly 7 digits
+        if [[ ! "$JETOUR_ID" =~ ^[0-9]{7}$ ]]; then
+          echo
+          echo "❌ Invalid input!"
+          echo "   Please enter exactly 7 digits."
+          echo
+          read -r -p "Press Enter to continue..."
+          continue
+        fi
+
+        # Jetour T2 ADB Password Algorithm
+        JETOUR_PASSWORD=$((10#$JETOUR_ID * 802018 % 1000000))
+
+        # Always display 6 digits
+        printf -v JETOUR_PASSWORD "%06d" "$JETOUR_PASSWORD"
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                     JETOUR T2 ADB                            ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║  Input    :           $JETOUR_ID                                ║"
+        echo "║  Password :           $JETOUR_PASSWORD                                 ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        read -r -p "Press Enter to continue..."
+        ;;
+
+      0)
+        return
+        ;;
+
+      *)
+        echo "❌ Invalid option!"
+        sleep 1
+        ;;
     esac
   done
 }
