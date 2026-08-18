@@ -954,16 +954,32 @@ ROX() {
         read -r -p "Press ENTER to continue..."
         ;;
 
-      2)
+        2)
         clear
+
+        # ============================================================
+        # DISPLAY MIRROR CONFIGURATION
+        # ============================================================
 
         MIRROR_DIR="$DESKTOP_APK/Rox/Mirror"
         MIRROR_APK="$MIRROR_DIR/Display_Mirror.apk"
+
+        # Hidden download URL - not displayed during installation
         MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
 
+        MIRROR_PACKAGE="com.example.displaymirror"
+        MIRROR_ACTIVITY="$MIRROR_PACKAGE/.MainActivity"
+
+        ADBKEY="$HOME/.android/adbkey"
+        ADBKEY_PUB="$HOME/.android/adbkey.pub"
+
         echo "╔══════════════════════════════════════════════════════════════╗"
-        echo "║              📥 DISPLAY MIRROR DOWNLOADER                   ║"
+        echo "║              📥 DISPLAY MIRROR - ROX                         ║"
         echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        echo "📦 Package:"
+        echo "   $MIRROR_PACKAGE"
         echo
 
         echo "📁 Target folder:"
@@ -971,88 +987,591 @@ ROX() {
         echo
 
         # ============================================================
-        # CHECK / CREATE ROX/Mirror FOLDER
+        # SELECT DEVICE
         # ============================================================
-
-        if [[ ! -d "$MIRROR_DIR" ]]; then
-          echo "📁 Mirror folder not found."
-          echo "📂 Creating:"
-          echo "   $MIRROR_DIR"
-          mkdir -p "$MIRROR_DIR" || {
-            echo "❌ Failed to create Mirror folder."
-            read -r -p "Press ENTER to continue..."
-            continue
-          }
-        else
-          echo "📁 Mirror folder already exists."
-        fi
-
-        # ============================================================
-        # CHECK WHETHER Display_Mirror.apk ALREADY EXISTS
-        # ============================================================
-
-        if [[ -f "$MIRROR_APK" && -s "$MIRROR_APK" ]]; then
-          echo
-          echo "✅ Display_Mirror.apk already exists."
-          echo "   Skipping download."
-          echo "📄 Using:"
-          echo "   $MIRROR_APK"
-        else
-          echo
-          echo "📥 Display_Mirror.apk not found."
-          echo "⬇️  Downloading..."
-
-          if command -v curl >/dev/null 2>&1; then
-            curl -L --fail --progress-bar \
-              "$MIRROR_URL" \
-              -o "$MIRROR_APK"
-            DOWNLOAD_STATUS=$?
-          elif command -v wget >/dev/null 2>&1; then
-            wget -O "$MIRROR_APK" "$MIRROR_URL"
-            DOWNLOAD_STATUS=$?
-          else
-            echo "❌ Neither curl nor wget is installed."
-            read -r -p "Press ENTER to continue..."
-            continue
-          fi
-
-          if [[ $DOWNLOAD_STATUS -ne 0 || ! -s "$MIRROR_APK" ]]; then
-            echo
-            echo "❌ Download failed."
-            rm -f "$MIRROR_APK"
-            read -r -p "Press ENTER to continue..."
-            continue
-          fi
-
-          echo
-          echo "✅ Download completed."
-          echo "📄 Saved to:"
-          echo "   $MIRROR_APK"
-        fi
-
-        echo
 
         echo "🔍 Checking connected device..."
+        echo
+
         select_device || {
-          echo "❌ No device selected. File was downloaded successfully."
+          echo
+          echo "❌ No device selected."
           read -r -p "Press ENTER to continue..."
           continue
         }
 
         wait_for_adb
 
-        echo "📦 Installing Display Mirror..."
+        echo
+        echo "📱 Device:"
+        echo "   $TARGET_DEVICE"
         echo
 
-        # Requested installation method: adb -d install -g
-        if $ADB -d install -g "$MIRROR_APK"; then
+        # ============================================================
+        # DELETE OLD INSTALLED APPLICATION
+        # ============================================================
+
+        echo "🔍 Checking existing Display Mirror..."
+
+        if ADB_CMD shell pm list packages 2>/dev/null | \
+          grep -q "^package:$MIRROR_PACKAGE$"; then
+
+          echo
+          echo "⚠️  Display Mirror is already installed."
+          echo "🗑️  Removing old application..."
+
+          if ADB_CMD shell pm uninstall "$MIRROR_PACKAGE" \
+            >/dev/null 2>&1; then
+
+            echo "✅ Old Display Mirror removed."
+
+          else
+
+            echo "❌ Failed to remove old Display Mirror."
+            echo "🛑 Installation cancelled."
+
+            disconnect_if_wireless
+            read -r -p "Press ENTER to continue..."
+            continue
+
+          fi
+
+        else
+
+          echo "ℹ️  Display Mirror is not installed."
+
+        fi
+
+        # ============================================================
+        # CREATE MIRROR FOLDER
+        # ============================================================
+
+        echo
+        echo "📁 Checking Mirror folder..."
+
+        if [[ ! -d "$MIRROR_DIR" ]]; then
+
+          echo "📂 Creating Mirror folder..."
+
+          mkdir -p "$MIRROR_DIR" || {
+
+            echo "❌ Failed to create Mirror folder."
+            read -r -p "Press ENTER to continue..."
+            continue
+
+          }
+
+          echo "✅ Mirror folder created."
+
+        else
+
+          echo "✅ Mirror folder already exists."
+
+        fi
+
+        # ============================================================
+        # DELETE OLD APK
+        # ============================================================
+
+        echo
+        echo "🗑️  Checking old Display_Mirror.apk..."
+
+        if [[ -f "$MIRROR_APK" ]]; then
+
+          echo "📄 Old APK found."
+
+          rm -f "$MIRROR_APK" || {
+
+            echo "❌ Failed to delete old APK."
+            read -r -p "Press ENTER to continue..."
+            continue
+
+          }
+
+          echo "✅ Old APK deleted."
+
+        else
+
+          echo "ℹ️  No old APK found."
+
+        fi
+
+        # ============================================================
+        # DOWNLOAD NEW APK
+        # ============================================================
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                  📥 DOWNLOADING APK                          ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        echo "📥 Downloading latest Display Mirror..."
+        echo
+
+        DOWNLOAD_STATUS=1
+
+        if command -v curl >/dev/null 2>&1; then
+
+          curl -L \
+            --fail \
+            --progress-bar \
+            "$MIRROR_URL" \
+            -o "$MIRROR_APK"
+
+          DOWNLOAD_STATUS=$?
+
+        elif command -v wget >/dev/null 2>&1; then
+
+          wget \
+            -O "$MIRROR_APK" \
+            "$MIRROR_URL"
+
+          DOWNLOAD_STATUS=$?
+
+        else
+
+          echo "❌ Neither curl nor wget is installed."
+          read -r -p "Press ENTER to continue..."
+          continue
+
+        fi
+
+        # ============================================================
+        # VERIFY DOWNLOAD
+        # ============================================================
+
+        if [[ $DOWNLOAD_STATUS -ne 0 || ! -s "$MIRROR_APK" ]]; then
+
+          echo
+          echo "❌ Download failed."
+
+          rm -f "$MIRROR_APK"
+
+          read -r -p "Press ENTER to continue..."
+          continue
+
+        fi
+
+        echo
+        echo "✅ Download completed."
+
+        # ============================================================
+        # INSTALL APK
+        # ============================================================
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                  📦 INSTALLING APK                           ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        if ADB_CMD install -g "$MIRROR_APK"; then
+
           echo
           echo "✅ Display Mirror installed successfully."
+
         else
+
           echo
           echo "❌ Display Mirror installation failed."
-          echo "📄 APK: $MIRROR_APK"
+
+          disconnect_if_wireless
+          read -r -p "Press ENTER to continue..."
+          continue
+
         fi
+
+        # ============================================================
+        # APP OPS
+        # ============================================================
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                  🔐 APPLYING APP OPS                         ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        echo "▶ SYSTEM_ALERT_WINDOW"
+
+        ADB_CMD shell appops set \
+          "$MIRROR_PACKAGE" \
+          SYSTEM_ALERT_WINDOW \
+          allow \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        echo "▶ PROJECT_MEDIA"
+
+        ADB_CMD shell appops set \
+          "$MIRROR_PACKAGE" \
+          PROJECT_MEDIA \
+          allow \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        echo "▶ REQUEST_INSTALL_PACKAGES"
+
+        ADB_CMD shell appops set \
+          "$MIRROR_PACKAGE" \
+          REQUEST_INSTALL_PACKAGES \
+          allow \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        echo "▶ USE_FULL_SCREEN_INTENT"
+
+        ADB_CMD shell appops set \
+          "$MIRROR_PACKAGE" \
+          USE_FULL_SCREEN_INTENT \
+          allow \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        # ============================================================
+        # ANDROID PERMISSIONS
+        # ============================================================
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                🔑 GRANTING PERMISSIONS                       ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        echo "▶ READ_EXTERNAL_STORAGE"
+
+        ADB_CMD shell pm grant \
+          "$MIRROR_PACKAGE" \
+          android.permission.READ_EXTERNAL_STORAGE \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        echo "▶ WRITE_EXTERNAL_STORAGE"
+
+        ADB_CMD shell pm grant \
+          "$MIRROR_PACKAGE" \
+          android.permission.WRITE_EXTERNAL_STORAGE \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        echo "▶ SYSTEM_ALERT_WINDOW"
+
+        ADB_CMD shell pm grant \
+          "$MIRROR_PACKAGE" \
+          android.permission.SYSTEM_ALERT_WINDOW \
+          2>/dev/null || true
+
+        echo "   ✅ Done"
+
+        # ============================================================
+        # BATTERY OPTIMIZATION
+        # ============================================================
+
+        echo
+        echo "🔋 Adding Display Mirror to battery whitelist..."
+
+        ADB_CMD shell dumpsys deviceidle whitelist \
+          +"$MIRROR_PACKAGE" \
+          2>/dev/null || true
+
+        echo "   ✅ Battery whitelist applied."
+
+        # ============================================================
+        # ENABLE BOOT RECEIVER
+        # ============================================================
+
+        echo
+        echo "🔄 Enabling BootReceiver..."
+
+        ADB_CMD shell pm enable \
+          "$MIRROR_PACKAGE/.BootReceiver" \
+          2>/dev/null || true
+
+        echo "   ✅ BootReceiver enabled."
+
+        # ============================================================
+        # ADB KEY SETUP
+        # ============================================================
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║                    🔑 ADB KEY SETUP                          ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        if [[ ! -f "$ADBKEY" || ! -f "$ADBKEY_PUB" ]]; then
+
+          echo "⚠️  ADB keys not found."
+          echo
+          echo "Expected:"
+          echo "   $ADBKEY"
+          echo "   $ADBKEY_PUB"
+          echo
+          echo "Generate them with:"
+          echo "   adb keygen ~/.android/adbkey"
+          echo
+
+        else
+
+          echo "✅ Local ADB keys found."
+
+          # ==========================================================
+          # ENABLE ADB TCP/IP
+          # ==========================================================
+
+          echo
+          echo "▶ Enabling ADB TCP/IP..."
+
+          ADB_CMD tcpip 5555 2>/dev/null || true
+
+          echo "   ✅ TCP/IP 5555 enabled."
+
+          # ==========================================================
+          # PUSH PRIVATE KEY
+          # ==========================================================
+
+          echo
+          echo "▶ Pushing adbkey..."
+
+          if ADB_CMD push \
+            "$ADBKEY" \
+            /data/local/tmp/adbkey \
+            >/dev/null 2>&1; then
+
+            echo "   ✅ adbkey pushed."
+
+          else
+
+            echo "   ⚠️  Failed to push adbkey."
+
+          fi
+
+          # ==========================================================
+          # PUSH PUBLIC KEY
+          # ==========================================================
+
+          echo
+          echo "▶ Pushing adbkey.pub..."
+
+          if ADB_CMD push \
+            "$ADBKEY_PUB" \
+            /data/local/tmp/adbkey.pub \
+            >/dev/null 2>&1; then
+
+            echo "   ✅ adbkey.pub pushed."
+
+          else
+
+            echo "   ⚠️  Failed to push adbkey.pub."
+
+          fi
+
+          # ==========================================================
+          # CREATE APP FILES DIRECTORY
+          # ==========================================================
+
+          echo
+          echo "▶ Preparing Display Mirror files..."
+
+          if ADB_CMD shell run-as "$MIRROR_PACKAGE" \
+            mkdir -p ./files \
+            2>/dev/null; then
+
+            echo "   ✅ App files directory ready."
+
+          else
+
+            echo "   ⚠️  Could not create app files directory."
+            echo "      run-as may not be permitted."
+
+          fi
+
+          # ==========================================================
+          # COPY PRIVATE KEY
+          # ==========================================================
+
+          echo
+          echo "▶ Installing adbkey inside Display Mirror..."
+
+          if ADB_CMD shell run-as "$MIRROR_PACKAGE" \
+            cp /data/local/tmp/adbkey ./files/adbkey \
+            2>/dev/null; then
+
+            echo "   ✅ adbkey installed."
+
+          else
+
+            echo "   ⚠️  Failed to install adbkey."
+
+          fi
+
+          # ==========================================================
+          # COPY PUBLIC KEY
+          # ==========================================================
+
+          echo
+          echo "▶ Installing adbkey.pub inside Display Mirror..."
+
+          if ADB_CMD shell run-as "$MIRROR_PACKAGE" \
+            cp /data/local/tmp/adbkey.pub ./files/adbkey.pub \
+            2>/dev/null; then
+
+            echo "   ✅ adbkey.pub installed."
+
+          else
+
+            echo "   ⚠️  Failed to install adbkey.pub."
+
+          fi
+
+        fi
+
+        # ============================================================
+        # VERIFY PACKAGE
+        # ============================================================
+
+        echo
+        echo "🔍 Verifying Display Mirror installation..."
+
+        if ADB_CMD shell pm list packages 2>/dev/null | \
+          grep -q "^package:$MIRROR_PACKAGE$"; then
+
+          echo "   ✅ Package installed:"
+          echo "      $MIRROR_PACKAGE"
+
+        else
+
+          echo "   ❌ Package not found."
+
+        fi
+
+        # ============================================================
+        # VERIFY APP OPS
+        # ============================================================
+
+        echo
+        echo "🔍 Checking AppOps..."
+
+        ADB_CMD shell appops get \
+          "$MIRROR_PACKAGE" \
+          2>/dev/null || true
+
+        # ============================================================
+        # VERIFY BATTERY WHITELIST
+        # ============================================================
+
+        echo
+        echo "🔍 Checking battery whitelist..."
+
+        if ADB_CMD shell dumpsys deviceidle whitelist \
+          2>/dev/null | grep -q "$MIRROR_PACKAGE"; then
+
+          echo "   ✅ Display Mirror is whitelisted."
+
+        else
+
+          echo "   ⚠️  Display Mirror is NOT whitelisted."
+
+        fi
+
+        # ============================================================
+        # VERIFY BOOT RECEIVER
+        # ============================================================
+
+        echo
+        echo "🔍 Checking BootReceiver..."
+
+        ADB_CMD shell pm dump \
+          "$MIRROR_PACKAGE" \
+          2>/dev/null | \
+          grep -A5 -B2 "BootReceiver" \
+          || true
+
+        # ============================================================
+        # VERIFY ADB KEYS
+        # ============================================================
+
+        echo
+        echo "🔍 Verifying ADB keys inside Display Mirror..."
+
+        if ADB_CMD shell run-as "$MIRROR_PACKAGE" \
+          ls -l ./files/adbkey ./files/adbkey.pub \
+          2>/dev/null; then
+
+          echo "   ✅ ADB keys are inside the application."
+
+        else
+
+          echo "   ⚠️  ADB keys were not found inside the application."
+
+        fi
+
+        # ============================================================
+        # FINAL STATUS
+        # ============================================================
+
+        echo
+        echo "╔══════════════════════════════════════════════════════════════╗"
+        echo "║             ✅ DISPLAY MIRROR SETUP COMPLETE                 ║"
+        echo "╠══════════════════════════════════════════════════════════════╣"
+        echo "║                                                              ║"
+        echo "║  📦 Package:                                                 ║"
+        echo "║     com.example.displaymirror                                ║"
+        echo "║                                                              ║"
+        echo "║  🔐 AppOps:                                                  ║"
+        echo "║     ✓ SYSTEM_ALERT_WINDOW                                    ║"
+        echo "║     ✓ PROJECT_MEDIA                                          ║"
+        echo "║     ✓ REQUEST_INSTALL_PACKAGES                               ║"
+        echo "║     ✓ USE_FULL_SCREEN_INTENT                                 ║"
+        echo "║                                                              ║"
+        echo "║  🔑 Permissions:                                             ║"
+        echo "║     ✓ READ_EXTERNAL_STORAGE                                  ║"
+        echo "║     ✓ WRITE_EXTERNAL_STORAGE                                 ║"
+        echo "║     ✓ SYSTEM_ALERT_WINDOW                                    ║"
+        echo "║                                                              ║"
+        echo "║  ⚙️  System:                                                 ║"
+        echo "║     ✓ Battery Optimization Whitelist                         ║"
+        echo "║     ✓ BootReceiver Enabled                                   ║"
+        echo "║                                                              ║"
+        echo "║  🔑 ADB:                                                     ║"
+        echo "║     ✓ TCP/IP 5555                                            ║"
+        echo "║     ✓ adbkey pushed                                          ║"
+        echo "║     ✓ adbkey.pub pushed                                      ║"
+        echo "║     ✓ Keys copied to app files/                              ║"
+        echo "║                                                              ║"
+        echo "╚══════════════════════════════════════════════════════════════╝"
+        echo
+
+        # ============================================================
+        # OPEN DISPLAY MIRROR
+        # ============================================================
+
+        echo "🚀 Opening Display Mirror..."
+        echo
+
+        wait_for_adb
+        if ADB_CMD shell am start \
+          -n "$MIRROR_PACKAGE/.MainActivity"; then
+
+          echo
+          echo "✅ Display Mirror opened successfully."
+
+        else
+
+          echo
+          echo "❌ Failed to open Display Mirror."
+
+        fi
+
+        # ============================================================
+        # FINISH
+        # ============================================================
 
         echo
         disconnect_if_wireless
