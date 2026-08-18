@@ -1572,7 +1572,7 @@ ROX() {
         # ============================================================
         # FINISH
         # ============================================================
-
+        ADB_CMD shell pm uninstall com.roxmotor.nonpreinstallapp
         echo
         disconnect_if_wireless
         read -r -p "Press ENTER to continue..."
