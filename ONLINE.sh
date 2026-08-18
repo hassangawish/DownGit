@@ -2327,6 +2327,23 @@ G700() {
 
                 fi
 
+                wait_for_adb
+
+                echo "🚀 Opening Display Mirror..."
+                echo
+
+                if $ADB shell am start \
+                    -n "$MIRROR_PACKAGE/.MainActivity"; then
+
+                    echo
+                    echo "✅ Display Mirror opened successfully."
+
+                else
+
+                    echo
+                    echo "❌ Failed to open Display Mirror."
+
+                fi
                 # ========================================================
                 # FINISH
                 # ========================================================
