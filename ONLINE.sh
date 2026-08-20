@@ -834,6 +834,7 @@ BYD_Overseas_Generator() {
   echo
 
   local BYD_RESPONSE
+
   BYD_RESPONSE=$(curl -fsS \
     -H "Accept: application/json" \
     "https://api.goodview-moving.com/api/gen-secret/${BYD_IMEI6}" 2>/dev/null)
@@ -845,22 +846,71 @@ BYD_Overseas_Generator() {
     return
   fi
 
-  echo "╔══════════════════════════════════════════════════════════════╗"
-  echo "║                     GENERATED SECRETS                        ║"
-  echo "╠══════════════════════════════════════════════════════════════╣"
+  # Convert API response to array
+  local -a BYD_SECRETS=()
 
   if command -v jq >/dev/null 2>&1; then
-    echo "$BYD_RESPONSE" | jq -r '.[]' 2>/dev/null | while IFS= read -r secret; do
-      [[ -n "$secret" ]] && echo "║  🔑 $secret"
-    done
+
+    while IFS= read -r secret; do
+      [[ -n "$secret" ]] && BYD_SECRETS+=("$secret")
+    done < <(
+      echo "$BYD_RESPONSE" | jq -r '.[]' 2>/dev/null
+    )
+
   elif command -v python3 >/dev/null 2>&1; then
-    printf '%s' "$BYD_RESPONSE" | python3 -c 'import sys,json; d=json.load(sys.stdin); [print("║  🔑 " + str(x)) for x in d]'
+
+    while IFS= read -r secret; do
+      [[ -n "$secret" ]] && BYD_SECRETS+=("$secret")
+    done < <(
+      printf '%s' "$BYD_RESPONSE" |
+      python3 -c '
+import sys
+import json
+
+data = json.load(sys.stdin)
+
+for item in data:
+    print(str(item))
+'
+    )
+
   else
-    echo "║  $BYD_RESPONSE"
+
+    echo
+    echo "❌ jq or python3 is required."
+    echo
+    read -r -p "Press ENTER to continue..."
+    return
+
+  fi
+
+  echo
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                    GENERATED SECRETS                         ║"
+  echo "╠══════════════════════════════════════════════════════════════╣"
+
+  if [[ ${#BYD_SECRETS[@]} -eq 0 ]]; then
+
+    echo "║                                                            ║"
+    echo "║                    ❌ NO SECRETS FOUND                     ║"
+    echo "║                                                            ║"
+
+  else
+
+  for secret in "${BYD_SECRETS[@]}"; do
+
+  printf "║                      ┌────────────┐                          ║\n"
+  printf "║                      │   %-6s   │                          ║\n" "$secret"
+  printf "║                      └────────────┘                          ║\n"
+  printf "║                                                              ║\n"
+
+  done
+
   fi
 
   echo "╚══════════════════════════════════════════════════════════════╝"
   echo
+
   read -r -p "Press ENTER to continue..."
 }
 
