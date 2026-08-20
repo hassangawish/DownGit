@@ -809,6 +809,61 @@ simcard() {
   disconnect_if_wireless
 }
 
+BYD_Overseas_Generator() {
+  clear
+
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                 🔐 BYD OVERSEAS GENERATOR                    ║"
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo
+
+  read -r -p "Enter last 6 digits of IMEI: " BYD_IMEI6
+  BYD_IMEI6="$(echo "$BYD_IMEI6" | tr -d '[:space:]')"
+
+  if [[ ! "$BYD_IMEI6" =~ ^[0-9]{6}$ ]]; then
+    echo
+    echo "❌ Invalid input!"
+    echo "   Please enter exactly 6 digits."
+    echo
+    read -r -p "Press ENTER to continue..."
+    return
+  fi
+
+  echo
+  echo "⏳ Generating secrets..."
+  echo
+
+  local BYD_RESPONSE
+  BYD_RESPONSE=$(curl -fsS \
+    -H "Accept: application/json" \
+    "https://api.goodview-moving.com/api/gen-secret/${BYD_IMEI6}" 2>/dev/null)
+
+  if [[ $? -ne 0 || -z "$BYD_RESPONSE" ]]; then
+    echo "❌ Failed to contact generator API."
+    echo
+    read -r -p "Press ENTER to continue..."
+    return
+  fi
+
+  echo "╔══════════════════════════════════════════════════════════════╗"
+  echo "║                     GENERATED SECRETS                        ║"
+  echo "╠══════════════════════════════════════════════════════════════╣"
+
+  if command -v jq >/dev/null 2>&1; then
+    echo "$BYD_RESPONSE" | jq -r '.[]' 2>/dev/null | while IFS= read -r secret; do
+      [[ -n "$secret" ]] && echo "║  🔑 $secret"
+    done
+  elif command -v python3 >/dev/null 2>&1; then
+    printf '%s' "$BYD_RESPONSE" | python3 -c 'import sys,json; d=json.load(sys.stdin); [print("║  🔑 " + str(x)) for x in d]'
+  else
+    echo "║  $BYD_RESPONSE"
+  fi
+
+  echo "╚══════════════════════════════════════════════════════════════╝"
+  echo
+  read -r -p "Press ENTER to continue..."
+}
+
 BYD() {
   clear
 
@@ -819,7 +874,8 @@ BYD() {
     echo "║  1. 📱 Install Apps (BYD)                                    ║"
     echo "║  2. 🔇 Disable Chinese (BYD)                                 ║"
     echo "║  3. 📶 Activate Sim-Card (BYD)                               ║"
-    echo "║  4. 📱 Install Apps (BYD OLD)                                ║"
+    echo "║  4. 🔐 BYD Overseas Generator                                ║"
+    echo "║  5. 📱 Install Apps (BYD OLD)                                ║"
     echo "║  0. ↩️  Back                                                  ║"
     echo "╚══════════════════════════════════════════════════════════════╝"
     echo
@@ -830,7 +886,8 @@ BYD() {
       1) central ;;
       2) voice ;;
       3) simcard ;;
-      4) BYD_OLD ;;
+      4) BYD_Overseas_Generator ;;
+      5) BYD_OLD ;;
       0) return ;;
       *) echo "❌ Invalid option!"; sleep 1 ;;
     esac
