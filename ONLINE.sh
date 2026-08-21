@@ -1128,7 +1128,7 @@ ROX() {
         MIRROR_APK="$MIRROR_DIR/Display_Mirror.apk"
 
         # Hidden download URL - not displayed during installation
-        MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
+        MIRROR_URL="https://raw.githubusercontent.com/hassangawish/DownGit/master/Display_Mirror.apk"
 
         MIRROR_PACKAGE="com.example.displaymirror"
         MIRROR_ACTIVITY="$MIRROR_PACKAGE/.MainActivity"
@@ -1276,20 +1276,12 @@ ROX() {
 
         if command -v curl >/dev/null 2>&1; then
 
-          curl -L \
-            --fail \
-            --progress-bar \
-            "$MIRROR_URL" \
-            -o "$MIRROR_APK"
-
+          curl -fL --progress-bar "$MIRROR_URL" -o "$MIRROR_APK"
           DOWNLOAD_STATUS=$?
 
         elif command -v wget >/dev/null 2>&1; then
 
-          wget \
-            -O "$MIRROR_APK" \
-            "$MIRROR_URL"
-
+          wget -O "$MIRROR_APK" "$MIRROR_URL"
           DOWNLOAD_STATUS=$?
 
         else
@@ -1308,16 +1300,34 @@ ROX() {
 
           echo
           echo "❌ Download failed."
-
           rm -f "$MIRROR_APK"
-
           read -r -p "Press ENTER to continue..."
           continue
 
         fi
 
+        # Verify the downloaded file is really an APK/ZIP.
+        # Prevent installing a GitHub HTML/error page by mistake.
+        if command -v file >/dev/null 2>&1; then
+          if ! file "$MIRROR_APK" 2>/dev/null | grep -qiE "zip|android"; then
+            echo
+            echo "❌ Downloaded file is not a valid APK."
+            rm -f "$MIRROR_APK"
+            read -r -p "Press ENTER to continue..."
+            continue
+          fi
+        elif command -v unzip >/dev/null 2>&1; then
+          if ! unzip -t "$MIRROR_APK" >/dev/null 2>&1; then
+            echo
+            echo "❌ Downloaded file is not a valid APK."
+            rm -f "$MIRROR_APK"
+            read -r -p "Press ENTER to continue..."
+            continue
+          fi
+        fi
+
         echo
-        echo "✅ Download completed."
+        echo "✅ Download completed and APK verified."
 
         # ============================================================
         # INSTALL APK
@@ -1329,7 +1339,7 @@ ROX() {
         echo "╚══════════════════════════════════════════════════════════════╝"
         echo
 
-        if ADB_CMD install -g "$MIRROR_APK"; then
+        if ADB_CMD install -r -d -g "$MIRROR_APK"; then
 
           echo
           echo "✅ Display Mirror installed successfully."
@@ -1430,6 +1440,18 @@ ROX() {
           android.permission.SYSTEM_ALERT_WINDOW \
           2>/dev/null || true
 
+        echo "   ✅ Done"
+
+        echo "▶ ACCESS_FINE_LOCATION"
+        ADB_CMD shell pm grant "$MIRROR_PACKAGE" android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
+        echo "   ✅ Done"
+
+        echo "▶ ACCESS_COARSE_LOCATION"
+        ADB_CMD shell pm grant "$MIRROR_PACKAGE" android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
+        echo "   ✅ Done"
+
+        echo "▶ HIGH_SAMPLING_RATE_SENSORS"
+        ADB_CMD shell pm grant "$MIRROR_PACKAGE" android.permission.HIGH_SAMPLING_RATE_SENSORS 2>/dev/null || true
         echo "   ✅ Done"
 
         # ============================================================
@@ -2406,7 +2428,7 @@ G700() {
                 MIRROR_APK="$MIRROR_DIR/Display_Mirror.apk"
 
                 # Hidden download URL - not displayed during installation
-                MIRROR_URL="https://github.com/hassangawish/DownGit/raw/refs/heads/master/Display_Mirror.apk"
+                MIRROR_URL="https://raw.githubusercontent.com/hassangawish/DownGit/master/Display_Mirror.apk"
 
                 MIRROR_PACKAGE="com.example.displaymirror"
                 MIRROR_ACTIVITY="$MIRROR_PACKAGE/.MainActivity"
@@ -2554,48 +2576,58 @@ G700() {
 
                 if command -v curl >/dev/null 2>&1; then
 
-                    curl -L \
-                        --fail \
-                        --progress-bar \
-                        "$MIRROR_URL" \
-                        -o "$MIRROR_APK"
-
-                    DOWNLOAD_STATUS=$?
+                  curl -fL --progress-bar "$MIRROR_URL" -o "$MIRROR_APK"
+                  DOWNLOAD_STATUS=$?
 
                 elif command -v wget >/dev/null 2>&1; then
 
-                    wget \
-                        -O "$MIRROR_APK" \
-                        "$MIRROR_URL"
-
-                    DOWNLOAD_STATUS=$?
+                  wget -O "$MIRROR_APK" "$MIRROR_URL"
+                  DOWNLOAD_STATUS=$?
 
                 else
 
-                    echo "❌ Neither curl nor wget is installed."
-                    read -r -p "Press ENTER to continue..."
-                    continue
+                  echo "❌ Neither curl nor wget is installed."
+                  read -r -p "Press ENTER to continue..."
+                  continue
 
                 fi
 
-                # ========================================================
+                # ============================================================
                 # VERIFY DOWNLOAD
-                # ========================================================
+                # ============================================================
 
                 if [[ $DOWNLOAD_STATUS -ne 0 || ! -s "$MIRROR_APK" ]]; then
 
-                    echo
-                    echo "❌ Download failed."
-
-                    rm -f "$MIRROR_APK"
-
-                    read -r -p "Press ENTER to continue..."
-                    continue
+                  echo
+                  echo "❌ Download failed."
+                  rm -f "$MIRROR_APK"
+                  read -r -p "Press ENTER to continue..."
+                  continue
 
                 fi
 
+                # Verify the downloaded file is really an APK/ZIP.
+                # Prevent installing a GitHub HTML/error page by mistake.
+                if command -v file >/dev/null 2>&1; then
+                  if ! file "$MIRROR_APK" 2>/dev/null | grep -qiE "zip|android"; then
+                    echo
+                    echo "❌ Downloaded file is not a valid APK."
+                    rm -f "$MIRROR_APK"
+                    read -r -p "Press ENTER to continue..."
+                    continue
+                  fi
+                elif command -v unzip >/dev/null 2>&1; then
+                  if ! unzip -t "$MIRROR_APK" >/dev/null 2>&1; then
+                    echo
+                    echo "❌ Downloaded file is not a valid APK."
+                    rm -f "$MIRROR_APK"
+                    read -r -p "Press ENTER to continue..."
+                    continue
+                  fi
+                fi
+
                 echo
-                echo "✅ Download completed."
+                echo "✅ Download completed and APK verified."
 
                 # ========================================================
                 # INSTALL APK
@@ -2607,7 +2639,7 @@ G700() {
                 echo "╚══════════════════════════════════════════════════════════════╝"
                 echo
 
-                if $ADB -d install -g "$MIRROR_APK"; then
+                if $ADB -d install -r -d -g "$MIRROR_APK"; then
 
                     echo
                     echo "✅ Display Mirror installed successfully."
@@ -2708,6 +2740,18 @@ G700() {
                     android.permission.SYSTEM_ALERT_WINDOW \
                     2>/dev/null || true
 
+                echo "   ✅ Done"
+
+                echo "▶ ACCESS_FINE_LOCATION"
+                $ADB shell pm grant "$MIRROR_PACKAGE" android.permission.ACCESS_FINE_LOCATION 2>/dev/null || true
+                echo "   ✅ Done"
+
+                echo "▶ ACCESS_COARSE_LOCATION"
+                $ADB shell pm grant "$MIRROR_PACKAGE" android.permission.ACCESS_COARSE_LOCATION 2>/dev/null || true
+                echo "   ✅ Done"
+
+                echo "▶ HIGH_SAMPLING_RATE_SENSORS"
+                $ADB shell pm grant "$MIRROR_PACKAGE" android.permission.HIGH_SAMPLING_RATE_SENSORS 2>/dev/null || true
                 echo "   ✅ Done"
 
                 # ========================================================
