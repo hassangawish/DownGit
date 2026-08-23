@@ -3176,9 +3176,10 @@ Premissions() {
 
   echo "Step 3: Clearing launcher cache..."
   ADB_CMD shell pm clear --user 0 com.zeekr.carlauncher3d 2>/dev/null || true
+  ADB_CMD -d shell pm clear  --user 0 com.zeekr.housekeeper
 
   echo "Step 4: Unlocking Sim-Card..."
-  ADB_CMD shell pm disable-user --user 0 com.zeekr.housekeeper
+  ADB_CMD -d shell pm disable-user --user 0 com.zeekr.housekeeper
 
   echo "Rebooting device to apply changes..."
   ADB_CMD reboot
@@ -3187,7 +3188,6 @@ Premissions() {
 
   echo "Step 5: Post-reboot cleanup..."
   ADB_CMD shell pm clear ecarx.notificationcenterui 2>/dev/null || true
-  # ADB_CMD shell pm disable-user ecarx.notificationcenterui 2>/dev/null || true
   ADB_CMD shell settings put system system_locales en 2>/dev/null || true
   ADB_CMD shell pm uninstall --user 0 com.ecarx.xsfinstallverifier 2>/dev/null || true
   ADB_CMD shell pm clear --user 0 com.zeekr.carlauncher3d 2>/dev/null || true
