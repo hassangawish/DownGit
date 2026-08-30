@@ -790,7 +790,7 @@ voice() {
   wait_for_adb
   echo "Disable Chinese Voice (BYD)"
   ADB_CMD shell pm disable-user "com.android.voicereminder" || true
-  ADB_CMD shell pm disable-user "com.byd.autovoice" || true
+  # ADB_CMD shell pm disable-user "com.byd.autovoice" || true
   ADB_CMD shell pm disable-user "com.byd.autovoice.tts" || true
   ADB_CMD shell pm disable-user "com.byd.autovoice.engine" || true
   sleep 2
