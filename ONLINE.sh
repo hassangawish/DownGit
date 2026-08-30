@@ -2106,27 +2106,27 @@ Rox-Unlock() {
     echo
 
     echo "[1/6] Current Lock Status:"
-    ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
+    ADB_CMD -d shell getprop vnrpst.engineermode.geofenceLock
     echo
 
     echo "[2/6] Clearing Geofence Lock..."
-    ADB_CMD shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
+    ADB_CMD -d shell 'setprop vnrpst.engineermode.geofenceLock "{\"geofenceLock_state\":0,\"geofenceLock_time\":0}"'
     sleep 1
 
     echo "[3/6] Verifying Lock Status..."
-    ADB_CMD shell getprop vnrpst.engineermode.geofenceLock
+    ADB_CMD -d shell getprop vnrpst.engineermode.geofenceLock
     echo
 
     echo "[4/6] Clearing SceneEditApp data for all users..."
 
-    USERS=($(ADB_CMD shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2))
+    USERS=($(ADB_CMD -d shell pm list users 2>/dev/null | grep -oE 'UserInfo\{[0-9]+' | cut -d'{' -f2))
 
     for user in "${USERS[@]}"; do
         echo "   → User $user"
 
-        # ADB_CMD shell pm clear --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
-        ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
-        ADB_CMD shell pm disable-user --user "$user" com.roxmotor.sceneeditapp
+        ADB_CMD -d shell pm clear --user 0 com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD -d shell pm disable-user --user 0 com.roxmotor.sceneeditapp >/dev/null 2>&1 || true
+        ADB_CMD -d shell pm disable-user --user 0 com.roxmotor.sceneeditapp
 
         echo "      ✓ Done"
     done
@@ -2147,7 +2147,7 @@ Rox-Unlock() {
     echo "      Current Lock Status"
     echo "======================================"
 
-    STATUS=$(ADB_CMD shell getprop vnrpst.engineermode.geofenceLock | tr -d '\r')
+    STATUS=$(ADB_CMD -d shell getprop vnrpst.engineermode.geofenceLock | tr -d '\r')
     echo "$STATUS"
     echo
     if echo "$STATUS" | grep -q '"geofenceLock_state":0' && \
